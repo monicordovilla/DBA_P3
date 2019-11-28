@@ -29,6 +29,10 @@ public class AgenteBurocrata extends AgenteSimple {
     int[][] mapa;
     String clave;
     String session;
+    AgenteDron dronFly;
+    AgenteDron dronAux;
+    AgenteDron dronAux2;
+    AgenteDron dronRescue;
 
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);

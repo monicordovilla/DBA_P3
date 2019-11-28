@@ -44,6 +44,20 @@ public abstract class AgenteSimple extends SuperAgent{
         outbox.setContent(mensaje);
         this.send(outbox);
     }
+    
+    /**
+    *
+    * @author Kieran
+    */
+    protected void comunicardDron(AgenteDron dron, String mensaje, int performativa) {
+        ACLMessage outbox = new ACLMessage();
+        outbox.setSender(this.getAid());
+        outbox.setPerformative(performativa);
+        outbox.setReceiver(new AgentID(dron.clave));
+        outbox.setContent(mensaje);
+        this.send(outbox);
+    }
+    
 
     /**
     *
