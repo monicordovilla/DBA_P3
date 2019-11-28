@@ -7,7 +7,7 @@ package dbaprac3;
 
 /**
  *
- * @author Celia, Kieran
+ * @author Celia, Kieran, Monica
  */
 public enum Accion {
     moveNW(7),
@@ -22,7 +22,7 @@ public enum Accion {
     moveDW(11),
     refuel(20),
     stop(25),
-    recue,
+    recue(35),
     logout(30);
     
     public final int value;
