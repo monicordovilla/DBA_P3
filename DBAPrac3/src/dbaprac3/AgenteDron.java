@@ -13,9 +13,11 @@ import static dbaprac3.Accion.*;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonValue;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Stack;
 import java.util.logging.Level;
@@ -60,6 +62,7 @@ public abstract class AgenteDron extends AgenteSimple{
     Accion accion_anterior; //Acción anterior
     boolean[][] memoria;
     String clave;   //Clave que hay que enviar con cada comando que se envía
+    int[][] mapa;    
     
     //dimensiones del mundo en el que se ha logueado, se asigna valor en el JSONDecode_Inicial
     int max_x;
@@ -360,6 +363,35 @@ public abstract class AgenteDron extends AgenteSimple{
     }
 
 
+    /**
+    *
+    * @author Monica
+    * Decodifica el primer mensaje del burocrata
+    * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
+    */
+    private void JSONDecode_Inicial(JsonObject mensaje){
+        clave = mensaje.get("session").asString();
+        max_x = mensaje.get("dimx").asInt();
+        max_y = mensaje.get("dimy").asInt();
+        JsonArray mapa_recibido = mensaje.get("map").asArray();
+        /*
+        Array array = new Array();
+        for (JsonValue j : mensaje.get("map").asArray()){
+            array.add(j.asInt());
+        }
+        
+        int contador = 0;
+        for(int i = 0; i<max_y; i++){
+            for(int j = 0; j<max_x; j++){
+                mapa[i][j] = array[contador];
+;
+                contador++;
+            }
+        }
+        */
+        clave = ultimo_mensaje_recibido.getConversationId();
+    }
+    
     /**
     *
     * @author Monica, Kieran

@@ -16,6 +16,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -82,7 +83,6 @@ public class AgenteBurocrata extends AgenteSimple {
     
     
 //METODOS DE COMUNICACION CON EL CONTROLLER
-
     /**
     *
     * @author Monica
@@ -117,6 +117,36 @@ public class AgenteBurocrata extends AgenteSimple {
         clave = ultimo_mensaje_recibido.getConversationId();
     }
 
+    /**
+    *
+    * @author Monica
+    * Codifica el primer mesaje que se le va a enviar al dron
+    * INFORM{"result":"<OK>", "session":"<master>", "dimx":<w>, "dimy":<h>, "map":[...], "x":<int>, "y":<int>, "estado":"<s>"}
+    */
+    private String JSONEncode_InicialDron(){
+        JsonObject a = new JsonObject();
+        
+        a.add("result", "OK");
+        a.add("session", session);
+        a.add("dimx", max_x);
+        a.add("dimy", max_y);
+        
+        //Codificando el mapa
+        JsonArray map = new JsonArray();
+        for(int i=0; i<max_y; i++){
+            for(int j=0; j<max_x; j++){
+                map.add( mapa[i][j] );
+            }            
+        }
+        a.add("map",map);
+        
+        a.add("x", 0);
+        a.add("y", 0);
+        a.add("estado", "EXPLORACION" );
+
+        String mensaje = a.toString();
+        return mensaje;
+    }
     
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
     
@@ -129,7 +159,7 @@ public class AgenteBurocrata extends AgenteSimple {
         JsonObject mensaje;
         String map = seleccionarMapa();
         String a = JSONEncode_Inicial(map);
-        comunicar("Izar", a, ACLMessage.SUBSCRIBE, null);
+        comunicar("Izar", a, ACLMessage.SUBSCRIBE, null);       
         mensaje = escuchar(true);
         JSONDecode_Inicial(mensaje);
         try {
@@ -137,6 +167,14 @@ public class AgenteBurocrata extends AgenteSimple {
         } catch (Exception ex) {
             System.out.println("Excepcion: Error al obtener el mapa");
         }
+        
+         //Llamada a los drones
+        String m = JSONEncode_InicialDron();
+        comunicarDron(dronFly, m, ACLMessage.INFORM, null);
+        comunicarDron(dronFly, m, ACLMessage.INFORM, null);
+        comunicarDron(dronFly, m, ACLMessage.INFORM, null);
+        comunicarDron(dronFly, m, ACLMessage.INFORM, null);
+        
         
         //BORRAR LUEGO - PRUEBA
         for(int i = 0; i < max_y; i++){
