@@ -73,18 +73,9 @@ public class AgenteBurocrata extends AgenteSimple {
         System.out.println("Mapa Descargada");
 
         mapa = new int[max_y][max_x];
-        
-        data = ((DataBufferByte)image.getRaster().getDataBuffer()).getData(); //Pasa el png a bytes
-        
-        final int width = image.getWidth();
-        final int height = image.getHeight();
-        int pixel_length = (image.getAlphaRaster() == null)? 3 : 4;
-        
-        System.out.println("wd " + width + " hg " + height + " pl " + pixel_length + " max " + max_x + " " + max_y);
-        
+                
         for(int i = 0; i < max_y; i++){
             for(int j = 0; j < max_x; j++) mapa[i][j] = image.getRGB( j, i ) & 0xff;
-//((int) (data[(i*max_x + j)*pixel_length] -16777216) & 0xff); //Coge el valor del canal azul
         }
         
     }
