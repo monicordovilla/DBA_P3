@@ -27,16 +27,16 @@ public class DBAPrac3 {
                 false           //SSL
         );
         
-        AgenteBurocrata Humph;
+        AgenteBurocrata Huph;
         
         try {
-            Humph = new AgenteBurocrata(new AgentID("GI_tIgnore"));
+            Huph = new AgenteBurocrata(new AgentID("GI_tIgnore"));
         } catch (Exception ex) {
             System.err.println("already on the platform, goofy");
             return;
         }
         
-        Humph.start();
+        Huph.start();
     }
     
 }

@@ -9,23 +9,32 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import DBA.SuperAgent;
 import com.eclipsesource.json.JsonObject;
 import java.util.Scanner;
-
-
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+import es.upv.dsic.gti_ia.core.ACLMessage;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 
 /**
  *
  * @author Kieran
  */
-public class AgenteBurocrata extends SuperAgent {
+public class AgenteBurocrata extends AgenteSimple {
+    int max_x;
+    int max_y;
+    int[][] mapa;
+    String clave;
+
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
     }
-    int dimx;
-    int dimy;
-    int map[][];
-    
+
     //METODOS DE COMUNICACION CON EL CONTROLLER
-    
+
     /**
     *
     * @author Kieran
@@ -37,7 +46,7 @@ public class AgenteBurocrata extends SuperAgent {
         String mapa_seleccionado = s.nextLine();
         return mapa_seleccionado;
     }
-    
+
     /**
     *
     * @author Monica
@@ -49,14 +58,6 @@ public class AgenteBurocrata extends SuperAgent {
         //a.add("command", "login");
         a.add("map", mapa);
 
-        /*//Solicitamos los sensores de los que queremos informacion
-        a.add("radar", true);
-        a.add("elevation", false);
-        a.add("magnetic", true);
-        a.add("gps", true);
-        a.add("fuel", true);
-        a.add("gonio", true);*/
-
         //Mandamos nuestro usuario y contraseña
         a.add("user", "Ibbotson");
         a.add("password", "oLARuosE");
@@ -64,7 +65,7 @@ public class AgenteBurocrata extends SuperAgent {
         String mensaje = a.toString();
         return mensaje;
     }
-    
+
     /**
     *
     * @author Kieran, Monica
@@ -72,11 +73,41 @@ public class AgenteBurocrata extends SuperAgent {
     * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
     */
     private void JSONDecode_Inicial(JsonObject mensaje){
-        dimx = mensaje.get("dimx").asInt();
-        dimy = mensaje.get("dimy").asInt();
-        
-        
+        max_x = mensaje.get("dimx").asInt();
+        max_y = mensaje.get("dimy").asInt();
+        /*min_z = mensaje.get("min").asInt();
+        max_z = mensaje.get("max").asInt();*/
+        clave = mensaje.get("key").asString();
+
     }
-    
-    
+
+
+
+    private void guardarMapa(JsonObject respuesta) throws Exception{
+        FileOutputStream fos = null;
+        JsonArray ja = respuesta.get("trace").asArray();
+        byte data[] = new byte [ja.size()];
+        for(int i=0; i<data.length;i++){
+            data[i] = (byte) ja.get(i).asInt();
+        }
+        fos = new FileOutputStream("map.png");
+        fos.write(data);
+        fos.close();
+        File mapFile = new File("map.png");
+        BufferedImage image = ImageIO.read(mapFile);
+        System.out.println("Mapa Descargada");
+
+        mapa = new int[max_y][max_x];
+    }
+
+    @Override
+    public void execute(){
+        String map = seleccionarMapa();
+        String a = JSONEncode_Inicial(map);
+        comunicar("Izar", a, ACLMessage.SUBSCRIBE);
+        escuchar();
+
+    }
+
+    protected void validarRespuesta(){} //ACABAR LUEGO
 }
