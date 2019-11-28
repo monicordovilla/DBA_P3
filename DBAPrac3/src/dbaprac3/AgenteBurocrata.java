@@ -28,13 +28,14 @@ public class AgenteBurocrata extends AgenteSimple {
     int max_y;
     int[][] mapa;
     String clave;
+    String session;
 
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
     }
 
-    //METODOS DE COMUNICACION CON EL CONTROLLER
-
+    
+    //METODOS PARA LA GESTION DEL MAPA
     /**
     *
     * @author Kieran
@@ -46,16 +47,41 @@ public class AgenteBurocrata extends AgenteSimple {
         String mapa_seleccionado = s.nextLine();
         return mapa_seleccionado;
     }
+    
+    /**
+    *
+    * @author Kieran
+    * Método para guardar el mapa
+    */
+    private void guardarMapa(JsonObject respuesta) throws Exception{
+        FileOutputStream fos = null;
+        JsonArray ja = respuesta.get("trace").asArray();
+        byte data[] = new byte [ja.size()];
+        for(int i=0; i<data.length;i++){
+            data[i] = (byte) ja.get(i).asInt();
+        }
+        fos = new FileOutputStream("map.png");
+        fos.write(data);
+        fos.close();
+        File mapFile = new File("map.png");
+        BufferedImage image = ImageIO.read(mapFile);
+        System.out.println("Mapa Descargada");
+
+        mapa = new int[max_y][max_x];
+    }
+    
+    
+    //METODOS DE COMUNICACION CON EL CONTROLLER
 
     /**
     *
     * @author Monica
+    * Codifica el primer mesaje que se le va a enviar al servidor
     * SUSCRIBE{"map":"<m>", "user":"<u>", "password":"<p>"}
     */
     private String JSONEncode_Inicial(String mapa){
         JsonObject a = new JsonObject();
         //Iniciamos y mandamos el mapa que queremos
-        //a.add("command", "login");
         a.add("map", mapa);
 
         //Mandamos nuestro usuario y contraseña
@@ -73,33 +99,20 @@ public class AgenteBurocrata extends AgenteSimple {
     * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
     */
     private void JSONDecode_Inicial(JsonObject mensaje){
+        session = mensaje.get("session").asString();
         max_x = mensaje.get("dimx").asInt();
         max_y = mensaje.get("dimy").asInt();
-        /*min_z = mensaje.get("min").asInt();
-        max_z = mensaje.get("max").asInt();*/
         clave = mensaje.get("key").asString();
-
+        //obtener mapa
     }
 
-
-
-    private void guardarMapa(JsonObject respuesta) throws Exception{
-        FileOutputStream fos = null;
-        JsonArray ja = respuesta.get("trace").asArray();
-        byte data[] = new byte [ja.size()];
-        for(int i=0; i<data.length;i++){
-            data[i] = (byte) ja.get(i).asInt();
-        }
-        fos = new FileOutputStream("map.png");
-        fos.write(data);
-        fos.close();
-        File mapFile = new File("map.png");
-        BufferedImage image = ImageIO.read(mapFile);
-        System.out.println("Mapa Descargada");
-
-        mapa = new int[max_y][max_x];
-    }
-
+    
+    //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
+    
+    /**
+    *
+    * @author Kieran
+    */
     @Override
     public void execute(){
         String map = seleccionarMapa();
@@ -109,5 +122,22 @@ public class AgenteBurocrata extends AgenteSimple {
 
     }
 
-    protected void validarRespuesta(){} //ACABAR LUEGO
+    /**
+    *
+    * @author Kieran
+    */
+    @Override
+    protected boolean validarRespuesta(ACLMessage a) {  //ACABAR LUEGO
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    /**
+    *
+    * @author Kieran
+    */
+    @Override
+    public void finalize() { //Opcional
+        System.out.println("\nFinalizando");
+        super.finalize(); //Pero si se incluye, esto es obligatorio
+    }
 }
