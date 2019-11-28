@@ -14,11 +14,11 @@ import java.util.Stack;
  * @author Kieran
  */
 public class AgenteRescate extends AgenteDron {
-    static int tamanio_radar = 1;
-    static int centro_radar = 0;
     
     public AgenteRescate(AgentID aid) throws Exception {
         super(aid);
         consumo_fuel = 0.5;
+        tamanio_radar = 1;
+        centro_radar = 0;
     }
 }

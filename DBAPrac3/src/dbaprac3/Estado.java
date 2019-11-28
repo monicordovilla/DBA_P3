@@ -10,5 +10,8 @@ package dbaprac3;
  * @author Monica
  */
 public enum Estado {
-    
+    EXPLORACION,
+    BUSQUEDA,
+    REPOSO,
+    REPOSTAJE;
 }

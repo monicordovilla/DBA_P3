@@ -22,7 +22,7 @@ public enum Accion {
     moveDW(11),
     refuel(20),
     stop(25),
-    recue(35),
+    rescue(35),
     logout(30);
     
     public final int value;
