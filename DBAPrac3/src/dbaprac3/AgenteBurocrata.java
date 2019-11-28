@@ -13,6 +13,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.logging.Level;
@@ -27,6 +28,7 @@ public class AgenteBurocrata extends AgenteSimple {
     int max_x;
     int max_y;
     int[][] mapa;
+    JsonArray mapa_recibido; //El objeto recibido por el JSON inicial que describe la imagen png del mapa
     String clave;
     String session;
     AgenteDron dronFly;
@@ -39,7 +41,7 @@ public class AgenteBurocrata extends AgenteSimple {
     }
 
     
-    //METODOS PARA LA GESTION DEL MAPA
+//METODOS PARA LA GESTION DEL MAPA
     /**
     *
     * @author Kieran
@@ -57,9 +59,8 @@ public class AgenteBurocrata extends AgenteSimple {
     * @author Kieran
     * Método para guardar el mapa
     */
-    private void guardarMapa(JsonObject respuesta) throws Exception{
+    private void guardarMapa(JsonArray ja) throws Exception{
         FileOutputStream fos = null;
-        JsonArray ja = respuesta.get("trace").asArray();
         byte data[] = new byte [ja.size()];
         for(int i=0; i<data.length;i++){
             data[i] = (byte) ja.get(i).asInt();
@@ -72,10 +73,24 @@ public class AgenteBurocrata extends AgenteSimple {
         System.out.println("Mapa Descargada");
 
         mapa = new int[max_y][max_x];
+        
+        data = ((DataBufferByte)image.getRaster().getDataBuffer()).getData(); //Pasa el png a bytes
+        
+        final int width = image.getWidth();
+        final int height = image.getHeight();
+        int pixel_length = (image.getAlphaRaster() == null)? 3 : 4;
+        
+        System.out.println("wd " + width + " hg " + height + " pl " + pixel_length + " max " + max_x + " " + max_y);
+        
+        for(int i = 0; i < max_y; i++){
+            for(int j = 0; j < max_x; j++) mapa[i][j] = image.getRGB( j, i ) & 0xff;
+//((int) (data[(i*max_x + j)*pixel_length] -16777216) & 0xff); //Coge el valor del canal azul
+        }
+        
     }
     
     
-    //METODOS DE COMUNICACION CON EL CONTROLLER
+//METODOS DE COMUNICACION CON EL CONTROLLER
 
     /**
     *
@@ -106,12 +121,13 @@ public class AgenteBurocrata extends AgenteSimple {
         session = mensaje.get("session").asString();
         max_x = mensaje.get("dimx").asInt();
         max_y = mensaje.get("dimy").asInt();
-        clave = mensaje.get("key").asString();
-        //obtener mapa
+        mapa_recibido = mensaje.get("map").asArray();
+        
+        clave = ultimo_mensaje_recibido.getConversationId();
     }
 
     
-    //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
+//METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
     
     /**
     *
@@ -119,11 +135,28 @@ public class AgenteBurocrata extends AgenteSimple {
     */
     @Override
     public void execute(){
+        JsonObject mensaje;
         String map = seleccionarMapa();
         String a = JSONEncode_Inicial(map);
-        comunicar("Izar", a, ACLMessage.SUBSCRIBE);
-        escuchar();
-
+        comunicar("Izar", a, ACLMessage.SUBSCRIBE, null);
+        mensaje = escuchar(true);
+        JSONDecode_Inicial(mensaje);
+        try {
+            guardarMapa(mapa_recibido);
+        } catch (Exception ex) {
+            System.out.println("Excepcion: Error al obtener el mapa");
+        }
+        
+        //BORRAR LUEGO - PRUEBA
+        for(int i = 0; i < max_y; i++){
+            for(int j = 0; j < max_x; j++) System.out.print(String.format("%03d",mapa[i][j]) + ' ');
+            System.out.print('\n');
+        }
+        
+        comunicar("Izar", "", ACLMessage.CANCEL, clave);
+        escuchar(true);
+        escuchar(true);
+        //FIN DE PRUEBA
     }
 
     /**

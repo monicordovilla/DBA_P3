@@ -380,22 +380,22 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     protected void checkin(){
         String mensaje = JSONCommand("checkin");
-        comunicar("Izar", mensaje, ACLMessage.REQUEST);
+        comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
     protected void move(Accion accion){
         String mensaje = JSONCommand(accion.toString());
-        comunicar("Izar", mensaje, ACLMessage.REQUEST);
+        comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
     protected void refuel(){
         String mensaje = JSONCommand("refuel");
-        comunicar("Izar", mensaje, ACLMessage.REQUEST);
+        comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
     protected void stop(){
         String mensaje = JSONCommand("stop");
-        comunicar("Izar", mensaje, ACLMessage.REQUEST);
+        comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
     protected void perception(){
-        comunicar("Izar", "", ACLMessage.QUERY_REF);
+        comunicar("Izar", "", ACLMessage.QUERY_REF, clave);
     }
     //protected boolean puedeRepostar(){} //PRAC3 -- IMPLEMENTAR COMUNICACION
     

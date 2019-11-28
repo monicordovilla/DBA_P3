@@ -17,6 +17,8 @@ import com.eclipsesource.json.JsonObject;
  */
 public abstract class AgenteSimple extends SuperAgent{
 
+    ACLMessage ultimo_mensaje_recibido;
+    
     public AgenteSimple(AgentID aid) throws Exception {
         super(aid);
     }
@@ -36,12 +38,13 @@ public abstract class AgenteSimple extends SuperAgent{
     *
     * @author Kieran
     */
-    protected void comunicar(String nombre, String mensaje, int performativa) {
+    protected void comunicar(String nombre, String mensaje, int performativa, String conv_id) {
         ACLMessage outbox = new ACLMessage();
         outbox.setSender(this.getAid());
         outbox.setPerformative(performativa);
         outbox.setReceiver(new AgentID(nombre));
         outbox.setContent(mensaje);
+        if(null != (conv_id) && !conv_id.isEmpty()) outbox.setConversationId(conv_id);
         this.send(outbox);
     }
     
@@ -49,13 +52,8 @@ public abstract class AgenteSimple extends SuperAgent{
     *
     * @author Kieran
     */
-    protected void comunicardDron(AgenteDron dron, String mensaje, int performativa) {
-        ACLMessage outbox = new ACLMessage();
-        outbox.setSender(this.getAid());
-        outbox.setPerformative(performativa);
-        outbox.setReceiver(new AgentID(dron.clave));
-        outbox.setContent(mensaje);
-        this.send(outbox);
+    protected void comunicarDron(AgenteDron dron, String mensaje, int performativa, String conv_id) {
+        comunicar(dron.clave, mensaje, performativa, conv_id);
     }
     
 
@@ -80,6 +78,8 @@ public abstract class AgenteSimple extends SuperAgent{
             System.out.println("Error de comunicación: Excepción al escuchar");
             return null;
         }
+
+        ultimo_mensaje_recibido = inbox;
         String mensaje = inbox.getContent();
         if(echo) System.out.println("Mensaje recibido:\n" + mensaje);
         return Json.parse(mensaje).asObject();
