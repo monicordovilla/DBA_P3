@@ -72,11 +72,9 @@ public class AgenteBurocrata extends SuperAgent {
     * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
     */
     private void JSONDecode_Inicial(JsonObject mensaje){
-        max_x = mensaje.get("dimx").asInt();
-        max_y = mensaje.get("dimy").asInt();
-        min_z = mensaje.get("min").asInt();
-        max_z = mensaje.get("max").asInt();
-        clave = mensaje.get("key").asString();
+        dimx = mensaje.get("dimx").asInt();
+        dimy = mensaje.get("dimy").asInt();
+        
         
     }
     
