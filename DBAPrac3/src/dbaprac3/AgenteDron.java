@@ -86,6 +86,7 @@ public abstract class AgenteDron extends AgenteSimple{
     boolean repostando; //Actualmente esta bajando para repostar
     Stack<Accion> mano_dcha; //Pila con las direcciones a las que desea moverse
     
+    String session;
 
     public AgenteDron(AgentID aid) throws Exception {
         super(aid);
@@ -370,7 +371,7 @@ public abstract class AgenteDron extends AgenteSimple{
     * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
     */
     private void JSONDecode_Inicial(JsonObject mensaje){
-        clave = mensaje.get("session").asString();
+        session = mensaje.get("session").asString();
         max_x = mensaje.get("dimx").asInt();
         max_y = mensaje.get("dimy").asInt();
         
@@ -391,7 +392,7 @@ public abstract class AgenteDron extends AgenteSimple{
     protected String JSONEncode_Inicial(){
         JsonObject a = new JsonObject();
         a.add("command", "checkin");
-        a.add("session", ""); //COMPROBAR DESPUES: NO TENGO NI IDEA DE QUE VA AQUI
+        a.add("session", session);
         a.add("rol", rol);
         a.add("x", ini_x);
         a.add("y", ini_y);
@@ -418,6 +419,14 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     protected void checkin(){
         String mensaje = JSONCommand("checkin");
+        
+        JsonObject a = new JsonObject();
+        a.add("session", session);
+        a.add("rol", rol);
+        a.add("x", gps.x);
+        a.add("y", gps.y);
+        mensaje = mensaje + a.toString();
+        
         comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
     protected void move(Accion accion){
