@@ -46,10 +46,11 @@ public abstract class AgenteDron extends AgenteSimple{
     
     GPS gps;
     int[][] radar;
-    int[][] magnetic;
+    int[][] infrared;
     Gonio gonio;
     float fuel;
     int torescue;
+    boolean goal;
     
     //PRAC3 -- OBLIGATORIO SOBREESCRIBIR ESTOS METODOS EN SUBCLASES
     String rol;
@@ -304,7 +305,7 @@ public abstract class AgenteDron extends AgenteSimple{
     * Limpieza de las diversas funcionalidades de comprobarAccion
     */
     protected Accion checkMeta(){
-        if(magnetic[centro_radar][centro_radar] == 1 || (gps.x == ini_x && gps.y == ini_y && torescue == 0)) {
+        if( gps.x == ini_x && gps.y == ini_y && torescue == 0 ) {
             //return algo, los drones de rescate bajarán en la meta mientras que los otros solo lo harán para volver a casa;
         }
         return null;
@@ -399,6 +400,46 @@ public abstract class AgenteDron extends AgenteSimple{
         return a.toString();
     }
     
+    
+    /**
+    *
+    * @author Monica
+    * Decodifica el primer mensaje del controller
+    * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
+    */
+    private void JSONDecode_variables(JsonObject mensaje){
+        //Extraer los valores asociados al GPS
+        gps.x = mensaje.get("gps").asObject().get("x").asInt();
+        gps.y = mensaje.get("gps").asObject().get("y").asInt();
+        gps.z = mensaje.get("gps").asObject().get("z").asInt();
+        
+        //Exraer los valores asociados al infrared
+        JsonArray vector = mensaje.get("infrared").asArray();
+        for(int i=0; i<radar.length; i++){
+            for(int j=0; j<radar.length; j++){
+                infrared[i][j] = vector.get(j+i*radar.length).asInt();
+            }
+        }
+        
+        //Extraer los valores asociados al gonio
+        gonio.angulo = mensaje.get("gonio").asObject().get("angle").asFloat();
+        gonio.distancia = mensaje.get("gonio").asObject().get("distance").asFloat();
+        
+        //Extraer el valor del combustible
+        fuel = mensaje.get("fuel").asFloat();
+        
+        //Extraer informacion sobre si nos hallamos en una meta
+        goal = mensaje.get("goal").asBoolean();
+        
+        //Extraer información sobre el estado del dron
+        status = mensaje.get("status").asString();
+        
+        //Extraer valores asociado a awacs
+        //preguntar sobre para que usar la informacion y como usarla
+        
+        clave = ultimo_mensaje_recibido.getConversationId();
+    }
+    
     /**
     *
     * @author Monica
@@ -469,7 +510,7 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     @Override
     public void execute() {
-        //codificar el mensaje inicial JSON aqui
+        //codificar el mensaje inicial JSON aqui        
         checkin();
 
         JsonObject respuesta = escuchar();
