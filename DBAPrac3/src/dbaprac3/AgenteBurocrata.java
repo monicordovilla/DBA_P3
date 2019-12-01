@@ -116,6 +116,23 @@ public class AgenteBurocrata extends AgenteSimple {
         
         clave = ultimo_mensaje_recibido.getConversationId();
     }
+    
+    /**
+    * 
+    * @author Monica
+    * Convierte el mapa en un array Json
+    */
+    private JsonArray JSON_Mapa(){        
+        //Codificando el mapa
+        JsonArray map = new JsonArray();
+        for(int i=0; i<max_y; i++){
+            for(int j=0; j<max_x; j++){
+                map.add( mapa[i][j] );
+            }            
+        }
+        
+        return map;
+    }
 
     /**
     *
@@ -133,17 +150,35 @@ public class AgenteBurocrata extends AgenteSimple {
         
         //Codificando el mapa
         JsonArray map = new JsonArray();
-        for(int i=0; i<max_y; i++){
-            for(int j=0; j<max_x; j++){
-                map.add( mapa[i][j] );
-            }            
-        }
+        map = JSON_Mapa();
         a.add("map",map);
         
         a.add("x", 0);
         a.add("y", 0);
         a.add("estado", "EXPLORACION" );
 
+        String mensaje = a.toString();
+        return mensaje;
+    }
+    
+    /**
+    * NUEVO AÑADIR ANA A DIAGRAMA
+    * @author Monica
+    * Codifica la actualización del mapa que se le va a enviar al dron
+    * REQUEST{"mapa":"{}", "dimx":"<int>", "dimy":<int>}
+    */
+    private String JSONEncode_MapaActualizar(){
+        JsonObject a = new JsonObject();
+        
+        //Codificando el mapa
+        JsonArray map = new JsonArray();
+        map = JSON_Mapa();
+        a.add("map",map);
+        
+        //Pasar las variable de dimension del mapa
+        a.add("dimx",max_x);
+        a.add("dimy",max_y);
+        
         String mensaje = a.toString();
         return mensaje;
     }

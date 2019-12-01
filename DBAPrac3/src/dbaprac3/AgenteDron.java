@@ -373,22 +373,14 @@ public abstract class AgenteDron extends AgenteSimple{
         clave = mensaje.get("session").asString();
         max_x = mensaje.get("dimx").asInt();
         max_y = mensaje.get("dimy").asInt();
-        JsonArray mapa_recibido = mensaje.get("map").asArray();
-        /*
-        Array array = new Array();
-        for (JsonValue j : mensaje.get("map").asArray()){
-            array.add(j.asInt());
-        }
         
-        int contador = 0;
-        for(int i = 0; i<max_y; i++){
-            for(int j = 0; j<max_x; j++){
-                mapa[i][j] = array[contador];
-;
-                contador++;
+        JsonArray mapa_recibido = mensaje.get("map").asArray();
+        for(int i=0; i<radar.length; i++){
+            for(int j=0; j<radar.length; j++){
+                mapa[i][j] = mapa_recibido.get(j+i*radar.length).asInt();
             }
         }
-        */
+        
         clave = ultimo_mensaje_recibido.getConversationId();
     }
     
@@ -404,6 +396,20 @@ public abstract class AgenteDron extends AgenteSimple{
         a.add("x", ini_x);
         a.add("y", ini_y);
         return a.toString();
+    }
+    
+    /**
+    *
+    * @author Monica
+    * Decodifica el mapa actualizado por parte del burocrata
+    */
+    private void JSONDecode_ActualizarMapa(JsonObject mensaje){        
+        JsonArray mapa_recibido = mensaje.get("map").asArray();
+        for(int i=0; i<radar.length; i++){
+            for(int j=0; j<radar.length; j++){
+                mapa[i][j] = mapa_recibido.get(j+i*radar.length).asInt();
+            }
+        }
     }
 
     /**
