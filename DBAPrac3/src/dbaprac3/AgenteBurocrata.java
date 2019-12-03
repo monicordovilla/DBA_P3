@@ -183,6 +183,20 @@ public class AgenteBurocrata extends AgenteSimple {
         return mensaje;
     }
     
+    /**
+    *
+    * @author Mónica
+    */
+    protected void avisarObjetivoEnontrado(){
+        JsonObject mensaje = new JsonObject();
+        mensaje.add("objetivo-encontrado", true);
+        
+        //avisa al dron de rescate
+        comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
+        
+        //avisa al dron mas cercano
+    }
+    
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
     
     /**

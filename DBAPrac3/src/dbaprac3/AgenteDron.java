@@ -51,6 +51,7 @@ public abstract class AgenteDron extends AgenteSimple{
     float fuel;
     int torescue;
     boolean goal;
+    JsonValue awacs;
     
     //PRAC3 -- OBLIGATORIO SOBREESCRIBIR ESTOS METODOS EN SUBCLASES
     String rol;
@@ -405,7 +406,10 @@ public abstract class AgenteDron extends AgenteSimple{
     *
     * @author Monica
     * Decodifica el primer mensaje del controller
-    * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
+    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
+    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
+    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
+    * "direction": accion}, ...] }}:CONVERSATION-ID@
     */
     private void JSONDecode_variables(JsonObject mensaje){
         //Extraer los valores asociados al GPS
@@ -435,9 +439,55 @@ public abstract class AgenteDron extends AgenteSimple{
         status = mensaje.get("status").asString();
         
         //Extraer valores asociado a awacs
-        //preguntar sobre para que usar la informacion y como usarla
+        awacs = mensaje.get("awacs");
         
         clave = ultimo_mensaje_recibido.getConversationId();
+    }
+    
+    
+    /**
+    *
+    * @author Monica
+    * Decodifica el primer mensaje del controller
+    * 
+    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
+    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
+    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
+    * "direction": accion}, ...] }}:CONVERSATION-ID@
+    */
+    private String JSONEncode_variables(JsonObject mensaje){
+        JsonObject a = new JsonObject();
+        
+        JsonObject coordenadas = new JsonObject();
+        coordenadas.add("x", gps.x);
+        coordenadas.add("y", gps.y);
+        coordenadas.add("z", gps.z);
+        a.add("gps", coordenadas);
+        
+        //infrared
+        JsonArray inf = new JsonArray();
+        for(int i=0; i<max_y; i++){
+            for(int j=0; j<max_x; j++){
+                inf.add( mapa[i][j] );
+            }            
+        }
+        a.add("infrared", inf);
+        
+        //gonio
+        JsonObject g = new JsonObject();
+        g.add("distance", gonio.distancia);
+        g.add("distance", gonio.angulo);
+        a.add("gonio", g);
+        
+        //fuel
+        a.add("fuel", fuel);
+        
+        //status
+        a.add("status", status);
+        
+        //awacs
+        a.add("awacs", awacs);
+        return a.asString();
     }
     
     /**
@@ -485,14 +535,29 @@ public abstract class AgenteDron extends AgenteSimple{
     protected void perception(){
         comunicar("Izar", "", ACLMessage.QUERY_REF, clave);
     }
+    
+    /**
+    *
+    * @author Mónica
+    */
+    protected void avisarObjetivoEnontrado(){
+        JsonObject mensaje = new JsonObject();
+        mensaje.add("objetivo-encontrado", true);
+        comunicar("Izar", mensaje.asString(), ACLMessage.INFORM, clave);
+    }
     //protected boolean puedeRepostar(){} //PRAC3 -- IMPLEMENTAR COMUNICACION
     
-    protected boolean validarRespuesta(JsonObject a){ //PRAC3 -- VER COMO SE HACE/BORRAR LUEGO
+    
+    /**
+    *
+    * @author Kieran
+    */
+    protected boolean validarRespuesta(JsonObject a){ 
         return true; //PRAC3 -- CAMBIAR
     }
     
     @Override
-    protected boolean validarRespuesta(ACLMessage a){
+    protected boolean validarRespuesta(ACLMessage a){//PRAC3 -- VER COMO SE HACE/BORRAR LUEGO
         return true; //PRAC3 -- CAMBIAR
     }
 
