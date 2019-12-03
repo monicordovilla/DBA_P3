@@ -143,7 +143,7 @@ public abstract class AgenteDron extends AgenteSimple{
     * @author Monica, Kieran
     * Comprueba si se puede subir por encima de la casilla a la que nos llevaría sigAccion
     */
-    private boolean puedeSubir(Accion sigAccion){
+    protected boolean puedeSubir(Accion sigAccion){
         boolean sube = true;
         int x,y,z=0;
         
@@ -284,7 +284,7 @@ public abstract class AgenteDron extends AgenteSimple{
     * @author Ana, Kieran, Monica
     * Se comprueba si se puede realizar la acción más prometedora
     */
-    private Accion comprobarAccion(){
+    protected Accion comprobarAccion(){
       Accion accion = null;
       
       if(repostando) return checkRepostaje(accion);
