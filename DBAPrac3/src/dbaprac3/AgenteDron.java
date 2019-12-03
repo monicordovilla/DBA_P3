@@ -89,11 +89,13 @@ public abstract class AgenteDron extends AgenteSimple{
     Stack<Accion> mano_dcha; //Pila con las direcciones a las que desea moverse
     
     String session;
+    Estado estado;
 
     public AgenteDron(AgentID aid) throws Exception {
         super(aid);
         mano_dcha = new Stack<>();
         repostando = false;
+        estado = Estado.REPOSO;
     }
 
 //METODOS DE EVALUACIÓN: La funcionalidad inteligente del agente, para decidir que hacer. PRAC3 -- **NO** LOS TOCAN LAS SUBCLASES, DRONRESCATE **NO** LAS PUEDE USAR
@@ -547,7 +549,7 @@ public abstract class AgenteDron extends AgenteSimple{
     }
     //protected boolean puedeRepostar(){} //PRAC3 -- IMPLEMENTAR COMUNICACION
     
-    
+    //No se cual de las 2 implementar y como hacerlo
     /**
     *
     * @author Kieran

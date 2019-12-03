@@ -34,8 +34,8 @@ public class AgenteBurocrata extends AgenteSimple {
     String session;
     AgenteDron dronFly;
     AgenteDron dronAux;
-    AgenteDron dronAux2;
     AgenteDron dronRescue;
+    AgenteDron dronRescue2;
 
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
@@ -191,10 +191,43 @@ public class AgenteBurocrata extends AgenteSimple {
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-encontrado", true);
         
+        //avisa al dron mas cercano en estado busqueda
+        //calcular diferencia entre angulos para ver el mas cercano
+        
+        if(dronRescue.estado == Estado.BUSQUEDA){
+            
+        }
+        else if(dronRescue2.estado == Estado.BUSQUEDA){
+            
+        }
+                
+       comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
+    }
+        
+    /**
+    *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
+    * @author Mónica
+    */
+    protected void avisarObjetivoIdentificado(int x, int y){
+        JsonObject mensaje = new JsonObject();
+        mensaje.add("objetivo-identificado", true);
+        mensaje.add("x", x);
+        mensaje.add("y", x);
+        
         //avisa al dron de rescate
         comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
+    }
+    
+    /**
+    *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
+    * @author Mónica
+    */
+    protected void avisarObjetivosCompletados(int x, int y){
+        JsonObject mensaje = new JsonObject();
+        mensaje.add("objetivos-encontrados", true);
         
-        //avisa al dron mas cercano
+        //avisa al dron de rescate
+        comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
     
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
@@ -220,9 +253,9 @@ public class AgenteBurocrata extends AgenteSimple {
          //Llamada a los drones
         String m = JSONEncode_InicialDron();
         comunicarDron(dronFly, m, ACLMessage.INFORM, null);
-        comunicarDron(dronFly, m, ACLMessage.INFORM, null);
-        comunicarDron(dronFly, m, ACLMessage.INFORM, null);
-        comunicarDron(dronFly, m, ACLMessage.INFORM, null);
+        comunicarDron(dronAux, m, ACLMessage.INFORM, null);
+        comunicarDron(dronRescue, m, ACLMessage.INFORM, null);
+        comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
         
         
         //BORRAR LUEGO - PRUEBA
