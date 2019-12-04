@@ -36,7 +36,9 @@ public class AgenteBurocrata extends AgenteSimple {
     AgenteDron dronAux;
     AgenteDron dronRescue;
     AgenteDron dronRescue2;
-
+    ArrayList<Integer> objetivosRecogidos = new ArrayList<>(); //Objetivos recogidos por los drones Rescue
+    double fuelRestante;
+    
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
     }
@@ -229,6 +231,71 @@ public class AgenteBurocrata extends AgenteSimple {
         //avisa al dron de rescate
         comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
+    
+        //METODOS DE CONTROL
+      
+    /**
+    *
+    * @author Celia
+    */ 
+    
+    boolean puedeRepostar(AgenteDron dron){
+        
+	if(dron.rol.equals("rescate"))
+            if(puedenVolver(true,true,false,false))        //Pueden volver todos los drones de Rescate
+		return true;
+            else if(objetivosRecogidos.get(0)>=objetivosRecogidos.get(1) && puedenVolver(true,false,false,false)) //D1 ha recogido más objetivos y puede volver
+		return dron == dronRescue;
+            else if(objetivosRecogidos.get(1)>objetivosRecogidos.get(0) && puedenVolver(false,true,false,false)) //D2 ha recogido más objetivos y puede volver
+		return dron == dronRescue2;
+            else
+           	return false;
+
+        else{
+            if(dron==dronFly)
+                return puedenVolver(true,true,true,false);
+            else
+                return puedenVolver(true,true,false,true);
+        }
+
+    }
+
+    //Comprueba si pueden volver a casa los drones especificados 
+    //(distancia hasta casa más bajada y margen "por posibles obstáculos")
+    //con el fuel general (que tiene y que puede repostar)
+    boolean puedenVolver(boolean d1, boolean d2, boolean d3, boolean d4){
+        int pasos=0;
+        double fuelNecesario=0;
+        double fuelTotal=this.fuelRestante;
+        int vecesRecarga;
+        AgenteDron dron =null;
+        
+        for(int i=0; i<4; i++){
+            switch (i){
+                case 0: if(d1) dron = dronRescue; break;
+                case 1: if(d2) dron = dronRescue2; break;
+                case 2: if(d3) dron = dronFly; break;
+                case 3: if(d4) dron = dronAux; break;
+            }
+            
+            if(dron!=null){
+                 pasos = Math.max(Math.abs(dronRescue.gps.x-dronRescue.ini_x) , Math.abs(dronRescue.gps.y-dronRescue.ini_y)) +
+                         dronRescue.gps.z/5 + 10; //Margen de 10 pasos
+                 fuelNecesario = pasos*dron.consumo_fuel - dron.fuel; //fuel que necesita sin contar el que ya tiene
+                 
+                 if(fuelNecesario>0){ //Si necesita
+                      vecesRecarga = (int) Math.ceil(fuelNecesario/100); //Numero de veces que necesita recargar 
+                      fuelTotal -= vecesRecarga*100;
+                      
+                      if(fuelTotal < 0)
+                          return false;
+                 }
+            }            
+        }
+        
+        return true;
+    }
+    
     
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
     
