@@ -235,34 +235,32 @@ public class AgenteBurocrata extends AgenteSimple {
         //METODOS DE CONTROL
       
     /**
-    *
     * @author Celia
     */ 
     
     boolean puedeRepostar(AgenteDron dron){
-        
-	if(dron.rol.equals("rescate"))
-            if(puedenVolver(true,true,false,false))        //Pueden volver todos los drones de Rescate
-		return true;
-            else if(objetivosRecogidos.get(0)>=objetivosRecogidos.get(1) && puedenVolver(true,false,false,false)) //D1 ha recogido más objetivos y puede volver
-		return dron == dronRescue;
-            else if(objetivosRecogidos.get(1)>objetivosRecogidos.get(0) && puedenVolver(false,true,false,false)) //D2 ha recogido más objetivos y puede volver
-		return dron == dronRescue2;
-            else
-           	return false;
-
-        else{
+      
             if(dron==dronFly)
                 return puedenVolver(true,true,true,false);
-            else
+            if(dron == dronAux)
                 return puedenVolver(true,true,false,true);
-        }
-
+            if(puedenVolver(true,true,false,false))        //Soy rescate y pueden volver los dos drones de rescate
+		return true;
+            if(dron == dronRescue)
+                return puedenVolver(true, false, false, false) && (objetivosRecogidos.get(0)>=objetivosRecogidos.get(1) || !puedenVolver(false, true, false, false));
+            
+            return puedenVolver(false, true, false, false) && (objetivosRecogidos.get(0)<objetivosRecogidos.get(1) || !puedenVolver(true, false, false, false));
+        
     }
-
-    //Comprueba si pueden volver a casa los drones especificados 
-    //(distancia hasta casa más bajada y margen "por posibles obstáculos")
-    //con el fuel general (que tiene y que puede repostar)
+    /**
+    *
+    * @author Celia
+    * 
+    *    Comprueba si pueden volver a casa los drones especificados 
+    *    (distancia hasta casa más bajada y margen "por posibles obstáculos")
+    *    con el fuel general (que tiene y que puede repostar)
+    *    d1 -> dronRescue  d2 -> dronRescue2   d3 -> dronFly   d4 -> dronAux
+    */ 
     boolean puedenVolver(boolean d1, boolean d2, boolean d3, boolean d4){
         int pasos=0;
         double fuelNecesario=0;
@@ -284,13 +282,16 @@ public class AgenteBurocrata extends AgenteSimple {
                  fuelNecesario = pasos*dron.consumo_fuel - dron.fuel; //fuel que necesita sin contar el que ya tiene
                  
                  if(fuelNecesario>0){ //Si necesita
-                      vecesRecarga = (int) Math.ceil(fuelNecesario/100); //Numero de veces que necesita recargar 
-                      fuelTotal -= vecesRecarga*100;
-                      
-                      if(fuelTotal < 0)
+                      if(fuelTotal > fuelNecesario){
+                        vecesRecarga = (int) Math.ceil(fuelNecesario/100); //Numero de veces que necesita recargar 
+                        fuelTotal -= vecesRecarga*100;
+                      }
+                      else
                           return false;
                  }
-            }            
+            }
+            
+            dron=null;
         }
         
         return true;
