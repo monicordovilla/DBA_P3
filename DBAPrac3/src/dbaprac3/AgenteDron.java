@@ -591,7 +591,7 @@ public abstract class AgenteDron extends AgenteSimple{
         comunicar( burocrata, mensaje.asString(), ACLMessage.INFORM, clave);
     }
     protected void puedeRepostar(){
-        comunicarDron(id, "repostar", ACLMessage.QUERY_IF, clave);
+        comunicar(id, "repostar", ACLMessage.QUERY_IF, clave);
     }
 
     //No se cual de las 2 implementar y como hacerlo

@@ -235,26 +235,29 @@ public class AgenteBurocrata extends AgenteSimple {
         //comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
 
-        //METODOS DE CONTROL
-
+    
     /**
     *
     * @author Mónica
     */
-    protected void responderPeticionRepostaje(String dron){
+    protected void responderPeticionRepostaje(AgenteDron dron){ //PRACT3 -- cambiar a string 
         if (puedeRepostar(dron)){
-            comunicarDron(dron, "ACEPTADO", ACLMessage.CONFIRM, clave);
+            comunicar(dron.id, "ACEPTADO", ACLMessage.CONFIRM, clave);
         }
         else{
-            comunicarDron(dron, "DENEGADO", ACLMessage.DISCONFIRM, clave);
+            comunicar(dron.id, "DENEGADO", ACLMessage.DISCONFIRM, clave);
         }
     }
+    
+    
+    //METODOS DE CONTROL
+
 
     /**
     * @author Celia
     */
 
-    boolean puedeRepostar(AgenteDron dron){
+    boolean puedeRepostar(AgenteDron dron){ //PRACT3 -- cambiar a string 
 
             if(dron==dronFly)
                 return puedenVolver(true,true,true,false);
