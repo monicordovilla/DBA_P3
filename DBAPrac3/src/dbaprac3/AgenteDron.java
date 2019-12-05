@@ -64,6 +64,7 @@ public abstract class AgenteDron extends AgenteSimple{
     Accion accion_anterior; //Acción anterior
     boolean[][] memoria;
     String clave;   //Clave que hay que enviar con cada comando que se envía
+    String burocrata;
     int[][] mapa;    
     
     //dimensiones del mundo en el que se ha logueado, se asigna valor en el JSONDecode_Inicial
@@ -90,12 +91,15 @@ public abstract class AgenteDron extends AgenteSimple{
     
     String session;
     Estado estado;
+    String id;
 
     public AgenteDron(AgentID aid) throws Exception {
         super(aid);
         mano_dcha = new Stack<>();
         repostando = false;
         estado = Estado.REPOSO;
+        
+        
     }
 
 //METODOS DE EVALUACIÓN: La funcionalidad inteligente del agente, para decidir que hacer. PRAC3 -- **NO** LOS TOCAN LAS SUBCLASES, DRONRESCATE **NO** LAS PUEDE USAR
@@ -508,7 +512,7 @@ public abstract class AgenteDron extends AgenteSimple{
 
     /**
     *
-    * @author Kieran
+    * @author Kieran, Mónica
     */
     protected void checkin(){
         String mensaje = JSONCommand("checkin");
@@ -539,7 +543,7 @@ public abstract class AgenteDron extends AgenteSimple{
     }
     
     /**
-    *
+    * NUEVO CAMBIAR EN DIAGRAMA ANA
     * @author Mónica
     */
     protected void avisarObjetivoEnontrado(){
@@ -547,7 +551,23 @@ public abstract class AgenteDron extends AgenteSimple{
         mensaje.add("objetivo-encontrado", true);
         comunicar("Izar", mensaje.asString(), ACLMessage.INFORM, clave);
     }
-    //protected boolean puedeRepostar(){} //PRAC3 -- IMPLEMENTAR COMUNICACION
+    
+    /**
+    *   NUEVO CAMBIAR EN DIAGRAMA ANA
+    * @author Mónica
+    */
+    protected void avisarObjetivoIdentificado(int x, int y){
+        JsonObject mensaje = new JsonObject();
+        mensaje.add("objetivo-identificado", true);
+        mensaje.add("x", x);
+        mensaje.add("y", x);
+        
+        //avisa al dron de rescate
+        comunicar( burocrata, mensaje.asString(), ACLMessage.INFORM, clave);
+    }
+    protected void puedeRepostar(){
+        comunicarDron(id, "repostar", ACLMessage.QUERY_IF, clave);
+    }
     
     //No se cual de las 2 implementar y como hacerlo
     /**
@@ -581,6 +601,7 @@ public abstract class AgenteDron extends AgenteSimple{
         checkin();
 
         JsonObject respuesta = escuchar();
+        JSONDecode_Inicial(respuesta);
 
         while(validarRespuesta(respuesta))
         {

@@ -52,8 +52,8 @@ public abstract class AgenteSimple extends SuperAgent{
     *
     * @author Kieran
     */
-    protected void comunicarDron(AgenteDron dron, String mensaje, int performativa, String conv_id) {
-        comunicar(dron.clave, mensaje, performativa, conv_id);
+    protected void comunicarDron(String dron, String mensaje, int performativa, String conv_id) {
+        comunicar(dron, mensaje, performativa, conv_id);
     }
     
 

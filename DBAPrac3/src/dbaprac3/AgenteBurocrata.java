@@ -32,10 +32,13 @@ public class AgenteBurocrata extends AgenteSimple {
     JsonArray mapa_recibido; //El objeto recibido por el JSON inicial que describe la imagen png del mapa
     String clave;
     String session;
-    AgenteDron dronFly;
-    AgenteDron dronAux;
-    AgenteDron dronRescue;
-    AgenteDron dronRescue2;
+    
+    //id de los drones
+    String dronFly;
+    String dronAux;
+    String dronRescue;
+    String dronRescue2;
+    
     ArrayList<Integer> objetivosRecogidos = new ArrayList<>(); //Objetivos recogidos por los drones Rescue
     double fuelRestante;
     
@@ -155,8 +158,8 @@ public class AgenteBurocrata extends AgenteSimple {
         map = JSON_Mapa();
         a.add("map",map);
         
-        a.add("x", 0);
-        a.add("y", 0);
+        a.add("x", 0); //PRAC3 -- CAMBIAR DESPUES
+        a.add("y", 0); //PRAC3 -- CAMBIAR DESPUES
         a.add("estado", "EXPLORACION" );
 
         String mensaje = a.toString();
@@ -195,14 +198,7 @@ public class AgenteBurocrata extends AgenteSimple {
         
         //avisa al dron mas cercano en estado busqueda
         //calcular diferencia entre angulos para ver el mas cercano
-        
-        if(dronRescue.estado == Estado.BUSQUEDA){
-            
-        }
-        else if(dronRescue2.estado == Estado.BUSQUEDA){
-            
-        }
-                
+      
        comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
         
@@ -234,6 +230,19 @@ public class AgenteBurocrata extends AgenteSimple {
     
         //METODOS DE CONTROL
       
+    /**
+    * 
+    * @author Mónica
+    */
+    protected void responderPeticionRepostaje(String dron){
+        if (puedeRepostar(dron)){
+            comunicarDron(dron, "ACEPTADO", ACLMessage.CONFIRM, clave);
+        }
+        else{
+            comunicarDron(dron, "DENEGADO", ACLMessage.DISCONFIRM, clave);
+        }
+    }
+    
     /**
     * @author Celia
     */ 
