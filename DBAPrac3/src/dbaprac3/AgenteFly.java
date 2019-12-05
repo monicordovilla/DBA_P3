@@ -23,10 +23,14 @@ public class AgenteFly extends AgenteDron {
     int pasos_desplazamiento; //Cuantos pasos nos quedan para poder realizar un nuevo barrido
     
     public AgenteFly(AgentID aid) throws Exception {
+        //No cambiar
         super(aid);
         consumo_fuel = 0.1;
         tamanio_radar = 5;
         centro_radar = 2;
+        rol = "fly";
+        
+        //Cambiar si se quiere
         infrarojo = new ArrayList();
         pasos_desplazamiento = tamanio_radar;
     }

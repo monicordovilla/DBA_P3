@@ -18,6 +18,7 @@ import com.eclipsesource.json.JsonObject;
 public abstract class AgenteSimple extends SuperAgent{
 
     ACLMessage ultimo_mensaje_recibido;
+    String reply_key;
     
     public AgenteSimple(AgentID aid) throws Exception {
         super(aid);
@@ -38,22 +39,18 @@ public abstract class AgenteSimple extends SuperAgent{
     *
     * @author Kieran
     */
-    protected void comunicar(String nombre, String mensaje, int performativa, String conv_id) {
+    protected void comunicar(String nombre, String mensaje, int performativa, String conv_id, String reply_to) {
         ACLMessage outbox = new ACLMessage();
         outbox.setSender(this.getAid());
         outbox.setPerformative(performativa);
         outbox.setReceiver(new AgentID(nombre));
         outbox.setContent(mensaje);
         if(null != (conv_id) && !conv_id.isEmpty()) outbox.setConversationId(conv_id);
+        if(null != (reply_to) && !reply_to.isEmpty()) outbox.setInReplyTo(reply_to);
         this.send(outbox);
     }
-    
-    /**
-    *
-    * @author Kieran
-    */
-    protected void comunicarDron(AgenteDron dron, String mensaje, int performativa, String conv_id) {
-        comunicar(dron.clave, mensaje, performativa, conv_id);
+    protected void comunicar(String nombre, String mensaje, int performativa, String conv_id) {
+        comunicar(nombre, mensaje, performativa, conv_id, null);
     }
     
 

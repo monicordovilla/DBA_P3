@@ -36,11 +36,23 @@ public class AgenteBurocrata extends AgenteSimple {
     AgenteDron dronAux;
     AgenteDron dronRescue;
     AgenteDron dronRescue2;
+    String nombreFly;
+    String nombreAux;
+    String nombreRescue;
+    String nombreRescue2;
     ArrayList<Integer> objetivosRecogidos = new ArrayList<>(); //Objetivos recogidos por los drones Rescue
     double fuelRestante;
     
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
+        
+        System.out.println("BUR: Inicializando dron");
+        
+        nombreFly = "GI_Fly4";
+        dronFly = new AgenteFly(new AgentID(nombreFly));
+        
+        System.out.println("BUR: Inicializado dron");
+        dronFly.start();
     }
 
     
@@ -196,14 +208,6 @@ public class AgenteBurocrata extends AgenteSimple {
         //avisa al dron mas cercano en estado busqueda
         //calcular diferencia entre angulos para ver el mas cercano
         
-        if(dronRescue.estado == Estado.BUSQUEDA){
-            
-        }
-        else if(dronRescue2.estado == Estado.BUSQUEDA){
-            
-        }
-                
-       comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
         
     /**
@@ -217,7 +221,7 @@ public class AgenteBurocrata extends AgenteSimple {
         mensaje.add("y", x);
         
         //avisa al dron de rescate
-        comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
+       // comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
     
     /**
@@ -229,7 +233,7 @@ public class AgenteBurocrata extends AgenteSimple {
         mensaje.add("objetivos-encontrados", true);
         
         //avisa al dron de rescate
-        comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
+        //comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
     
         //METODOS DE CONTROL
@@ -317,16 +321,18 @@ public class AgenteBurocrata extends AgenteSimple {
         } catch (Exception ex) {
             System.out.println("Excepcion: Error al obtener el mapa");
         }
-        
+        System.out.println("BUR: Inicializando drones");
          //Llamada a los drones
         String m = JSONEncode_InicialDron();
-        comunicarDron(dronFly, m, ACLMessage.INFORM, null);
-        comunicarDron(dronAux, m, ACLMessage.INFORM, null);
-        comunicarDron(dronRescue, m, ACLMessage.INFORM, null);
-        comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
+        System.out.println("BUR: Codificando JSON");
+        comunicar(nombreFly, m, ACLMessage.INFORM, null);
+        //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
+        //comunicarDron(dronRescue, m, ACLMessage.INFORM, null);
+        //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
         
         
         //BORRAR LUEGO - PRUEBA
+        /*
         for(int i = 0; i < max_y; i++){
             for(int j = 0; j < max_x; j++) System.out.print(String.format("%03d",mapa[i][j]) + ' ');
             System.out.print('\n');
@@ -335,7 +341,10 @@ public class AgenteBurocrata extends AgenteSimple {
         comunicar("Izar", "", ACLMessage.CANCEL, clave);
         escuchar(true);
         escuchar(true);
+        */
         //FIN DE PRUEBA
+        
+        
     }
 
     /**
@@ -354,6 +363,7 @@ public class AgenteBurocrata extends AgenteSimple {
     @Override
     public void finalize() { //Opcional
         System.out.println("\nFinalizando");
+        comunicar("Izar", "", ACLMessage.CANCEL, clave);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
 }

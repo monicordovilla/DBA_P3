@@ -375,35 +375,27 @@ public abstract class AgenteDron extends AgenteSimple{
     * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
     */
     private void JSONDecode_Inicial(JsonObject mensaje){
+        System.out.println("a");
         session = mensaje.get("session").asString();
         max_x = mensaje.get("dimx").asInt();
         max_y = mensaje.get("dimy").asInt();
+        System.out.println("aa");
         
         JsonArray mapa_recibido = mensaje.get("map").asArray();
-        for(int i=0; i<radar.length; i++){
-            for(int j=0; j<radar.length; j++){
-                mapa[i][j] = mapa_recibido.get(j+i*radar.length).asInt();
+        mapa = new int[max_x][max_y];
+        for(int i=0; i<max_x; i++){
+            for(int j=0; j<max_y; j++){
+                mapa[i][j] = mapa_recibido.get(j+i*max_y).asInt();
             }
         }
+        System.out.println("aaa");
+        ini_x = mensaje.get("x").asInt();
+        ini_y = mensaje.get("y").asInt();
         
         clave = ultimo_mensaje_recibido.getConversationId();
     }
     
-    /**
-    *
-    * @author Monica, Kieran
-    */
-    protected String JSONEncode_Inicial(){
-        JsonObject a = new JsonObject();
-        a.add("command", "checkin");
-        a.add("session", session);
-        a.add("rol", rol);
-        a.add("x", ini_x);
-        a.add("y", ini_y);
-        return a.toString();
-    }
-    
-    
+   
     /**
     *
     * @author Monica
@@ -442,8 +434,6 @@ public abstract class AgenteDron extends AgenteSimple{
         
         //Extraer valores asociado a awacs
         awacs = mensaje.get("awacs");
-        
-        clave = ultimo_mensaje_recibido.getConversationId();
     }
     
     
@@ -497,7 +487,7 @@ public abstract class AgenteDron extends AgenteSimple{
     * @author Monica
     * Decodifica el mapa actualizado por parte del burocrata
     */
-    private void JSONDecode_ActualizarMapa(JsonObject mensaje){        
+    protected void JSONDecode_ActualizarMapa(JsonObject mensaje){        
         JsonArray mapa_recibido = mensaje.get("map").asArray();
         for(int i=0; i<radar.length; i++){
             for(int j=0; j<radar.length; j++){
@@ -511,14 +501,15 @@ public abstract class AgenteDron extends AgenteSimple{
     * @author Kieran
     */
     protected void checkin(){
-        String mensaje = JSONCommand("checkin");
+        String mensaje;
         
         JsonObject a = new JsonObject();
+        a.add("command", "checkin");
         a.add("session", session);
         a.add("rol", rol);
-        a.add("x", gps.x);
-        a.add("y", gps.y);
-        mensaje = mensaje + a.toString();
+        a.add("x", ini_x);
+        a.add("y", ini_y);
+        mensaje = a.toString();
         
         comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
@@ -535,7 +526,7 @@ public abstract class AgenteDron extends AgenteSimple{
         comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
     protected void perception(){
-        comunicar("Izar", "", ACLMessage.QUERY_REF, clave);
+        comunicar("Izar", "", ACLMessage.QUERY_REF, clave, reply_key);
     }
     
     /**
@@ -578,12 +569,33 @@ public abstract class AgenteDron extends AgenteSimple{
     @Override
     public void execute() {
         //codificar el mensaje inicial JSON aqui        
-        checkin();
-
+        
+        System.out.println("DRON: Inicializando");
+        
         JsonObject respuesta = escuchar();
-
+        
+        System.out.println("DRON: Msg Escuchado");
+        
+        JSONDecode_Inicial(respuesta);
+        
+        System.out.println("DRON: Haciendo checkin");
+        
+        checkin();
+        escuchar();
+        clave = ultimo_mensaje_recibido.getConversationId();
+        reply_key = ultimo_mensaje_recibido.getReplyWith();
+      
+        System.out.println("DRON: Bucle principal");
+        
         while(validarRespuesta(respuesta))
         {
+            
+            System.out.println("b");
+            perception();
+            JsonObject msg = escuchar();
+ 
+            System.out.println("bb");
+            JSONDecode_variables(msg);
             comprobarAccion();
             escuchar();
         }
@@ -596,6 +608,7 @@ public abstract class AgenteDron extends AgenteSimple{
     @Override
     public void finalize() { //Opcional
         System.out.println("\nFinalizando");
+         comunicar("Izar", "", ACLMessage.CANCEL, clave);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
 }
