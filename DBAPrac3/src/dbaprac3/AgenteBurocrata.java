@@ -317,7 +317,7 @@ public class AgenteBurocrata extends AgenteSimple {
     
     AgenteDron quienRescata(int x, int y, int z){
         int pasosR1 = numPasos(dronRescue.gps.x, dronRescue.gps.y, dronRescue.gps.z, x, y, z, 0);
-        int pasosR2 = numPasos(dronRescue2.gps.x, dronRescue2.gps.y, dronRescue2.gps.z, x, y, z, 10);
+        int pasosR2 = numPasos(dronRescue2.gps.x, dronRescue2.gps.y, dronRescue2.gps.z, x, y, z, 0);
         if(pasosR1 >= pasosR2)
             return dronRescue;
         return dronRescue2;
