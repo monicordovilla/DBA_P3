@@ -18,15 +18,22 @@ import javafx.util.Pair;
 public class AgenteFly extends AgenteDron {
     
     ArrayList<Pair<Integer, Integer>> infrarojo;
-    boolean dir_norte;
-    boolean dir_oeste;
+    boolean dir_norte = false; //Cambiar luego
+    boolean dir_oeste = false; //Cambiar luego
     int pasos_desplazamiento; //Cuantos pasos nos quedan para poder realizar un nuevo barrido
+    int alemanes_debug = 0; //BORRAR LUEGO, el numero de alemanes que ha visto
     
     public AgenteFly(AgentID aid) throws Exception {
+        //No cambiar
         super(aid);
         consumo_fuel = 0.1;
         tamanio_radar = 5;
         centro_radar = 2;
+        rol = "fly";
+        max_z = 255;
+        infrared = new int[tamanio_radar][tamanio_radar];
+        
+        //Cambiar si se quiere
         infrarojo = new ArrayList();
         pasos_desplazamiento = tamanio_radar;
     }
@@ -40,20 +47,16 @@ public class AgenteFly extends AgenteDron {
     protected Accion comprobarAccion(){
       Accion accion = null;
       
-      if(repostando) return checkRepostaje(accion);
-      
-      accion = checkMeta();
-      if(accion != null) return accion;
-
       accion = (dir_norte) ? moveN : moveS;
       
-      busquedaMapasAltos(accion);
+      accion = busquedaMapasAltos(accion);
+      accion = checkNavegacionNormal(accion);
       accion = checkRepostaje(accion);
-    
+          
       return accion;
         
     }
-      
+    
     /**
     *
     * @author Ana, Kieran
@@ -61,17 +64,15 @@ public class AgenteFly extends AgenteDron {
     */
     public Accion busquedaMapasAltos(Accion accion){ //Cuando creemos las instancias debemos establecerle un identificador para que aqui segn eso recorra una parte del mapa
         
-        int x=0,y=0;
         boolean dron_demasiado_bajo = false;
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, centro_radar);
-        x = coords.getKey();
-        y = coords.getValue();
         
-        for(int i=0; i<radar.length && !dron_demasiado_bajo; i++) 
+        
+        //Comprobar el infrarojos por si hay que subir o enviar algo
+        for(int i=0; i<infrared.length && !dron_demasiado_bajo; i++) 
         {
-            for(int j=0; j<radar.length; j++)
+            for(int j=0; j<infrared.length; j++)
             {
-                if(infrared[i][j] == -1) {
+                if(infrared[i][j] == -1 && gps.z != 255) { //BUGEADO LADO DEL PROFESOR: < en vez de <= o similar
                     dron_demasiado_bajo = true;//Subir si i j vale -1
                 }
                 if(infrared[i][j] == 1) {
@@ -79,41 +80,42 @@ public class AgenteFly extends AgenteDron {
                     if(!infrarojo.contains(coords_obj)) {//mandar al burocrata que hay uno y la posicion
                         infrarojo.add(coords_obj);
                         //TODO -- MANDAR AL BUROCRATA
+                        alemanes_debug++;
                     }
                 }
             }
         }
 
-        if(gps.x == min_x || gps.x == max_x) { //Vemos si hemos llegado a la parte superior o inferior del mapa
-            if(pasos_desplazamiento != 0) {
+        //Mover a la izda/dcha si se ha llegado al limite del mapa
+        if((gps.y == min_y && dir_norte) || (gps.y == max_y-1 && !dir_norte)) { //Vemos si hemos llegado a la parte superior o inferior del mapa
+            if((dir_oeste && gps.x == min_x) || (!dir_oeste && gps.x == max_x-1)) { //Vemos si estamos en el borde lateral, si estamos paramos y bajamos
+                pasos_desplazamiento = 0;
+            }
+            
+            if(pasos_desplazamiento > 0) {
                 Accion dir = (dir_oeste) ? moveW : moveE; //Movemos al este u oeste segun corresponda
-                if((dir_oeste && gps.y == min_y) || (!dir_oeste && gps.y == max_y)) { //Vemos si estamos en el borde lateral, si estamos paramos
-                    accion = stop; 
-                }
-                else { accion = dir; }
+                accion = dir;
                 pasos_desplazamiento--;
             }
-            else {
+            else { //Cambio de sentido vertical, ya que hemos cubierto todod el radar
                 pasos_desplazamiento = tamanio_radar;
                 dir_norte = !dir_norte;
+                accion = (dir_norte) ? moveN : moveS;
             }
         }
         
-        coords = movimientoEnRadar(accion, centro_radar);
-        x = coords.getKey();
-        y = coords.getValue();
-        
-        if(radar[x][y]==0) //Si la hemos liado, salir
-            return logout;
-        else if(dron_demasiado_bajo || (radar[x][y] > gps.z && (gps.z+5 <= max_z) && puedeSubir(accion)))
-            return moveUP;
-        else if(radar[x][y] <= gps.z) //Estamos a la altura de la celda a la que queremos ir o superor
-            return accion;
-            
+        if(dron_demasiado_bajo)
+            accion = moveUP;
+                   
         return accion;
                 
         }
     
+    @Override
+    public void finalize(){
+        System.out.println("\nAlemanes encontrados: " + alemanes_debug);
+        super.finalize(); //Pero si se incluye, esto es obligatorio
+    }
     
     
     /**

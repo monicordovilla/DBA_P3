@@ -43,87 +43,111 @@ public abstract class AgenteDron extends AgenteSimple{
         public float angulo;
         public float distancia;
     }
-    
+
     GPS gps;
-    int[][] radar;
     int[][] infrared;
     Gonio gonio;
     float fuel;
     int torescue;
     boolean goal;
     JsonValue awacs;
-    
+
     //PRAC3 -- OBLIGATORIO SOBREESCRIBIR ESTOS METODOS EN SUBCLASES
     String rol;
     static int tamanio_radar;
     static int centro_radar;
     double consumo_fuel; //Consumo de fuel por movimiento
-    
+
     String status;
     Accion command; //Siguiente accion que tiene que hacer el agente
     Accion accion_anterior; //Acción anterior
     boolean[][] memoria;
     String clave;   //Clave que hay que enviar con cada comando que se envía
     String burocrata;
-    int[][] mapa;    
-    
+    int[][] mapa;
+
     //dimensiones del mundo en el que se ha logueado, se asigna valor en el JSONDecode_Inicial
     int max_x;
     int max_y;
-    //ahora mismo no se usa, por si queremos evitar bordes
-    int min_x;
-    int min_y;
+    //por si queremos evitar bordes
+    int min_x = 0;
+    int min_y = 0;
     //altura mínima y máxima a las que el drone puede volar, se asigna valor en el JSONDecode_Inicial
-    int min_z;
+    int min_z = 0;
     int max_z;
     //PRAC3 -- posiciones iniciales para mandar en JSONEncode_Inicial
     int ini_x;
     int ini_y;
-    
+
     int pasos = 0;
     int pasos_repetidos = 0;
     int max_pasos = 10000;
     int max_pasos_repetidos = 10;
 
-    int unidades_updown; //Unidades que consume las bajadas y subidas
+    int unidades_updown = 5; //Unidades que consume las bajadas y subidas
     boolean repostando; //Actualmente esta bajando para repostar
     Stack<Accion> mano_dcha; //Pila con las direcciones a las que desea moverse
-    
+
     String session;
     Estado estado;
     String id;
 
     public AgenteDron(AgentID aid) throws Exception {
         super(aid);
+        gps = new GPS();
+        gonio = new Gonio();
         mano_dcha = new Stack<>();
         repostando = false;
         estado = Estado.REPOSO;
-        
-        
+
+
     }
 
 //METODOS DE EVALUACIÓN: La funcionalidad inteligente del agente, para decidir que hacer. PRAC3 -- **NO** LOS TOCAN LAS SUBCLASES, DRONRESCATE **NO** LAS PUEDE USAR
-    
+
+    protected boolean enLimites(int x, int y){
+        return (x >= min_x && x < max_x && y >= min_y && y < max_y);
+    }
+
     /**
-    * 
+    *
     * @author Kieran
     * Devuelve las coordenadas de radar de la casilla de al lado
     */
-    protected Pair<Integer,Integer> movimientoEnRadar(Accion sigAccion, int offset){
-        int x = 0, y = 0;
+    protected Pair<Integer,Integer> movimientoEnRadar(Accion sigAccion, int x, int y){
         switch(sigAccion) {
                 case moveNW: x--;   y--; break; //Comprobación del movimiento NW
                 case moveN:  x--;        break;//Comprobación del movimiento N
                 case moveNE: x--;   y++; break; //Comprobación del movimiento NE
-                case moveW:  y--;        break; //Comprobación del movimiento W
-                case moveE:  y++;        break; //Comprobación del movimiento E
+                case moveW:         y--; break; //Comprobación del movimiento W
+                case moveE:         y++; break; //Comprobación del movimiento E
                 case moveSW: x++;   y--; break; //Comprobación del movimiento SW
                 case moveS:  x++;        break;//Comprobación del movimiento S
                 case moveSE: x++;   y++; break;//Comprobación del movimiento SE
               }
         return new Pair<>(x,y);
     }
-    
+
+    protected Pair<Integer,Integer> movimientoEnMapa(Accion sigAccion, int x, int y){
+                switch(sigAccion) {
+                case moveNW: y--;   x--; break; //Comprobación del movimiento NW
+                case moveN:  y--;        break;//Comprobación del movimiento N
+                case moveNE: y--;   x++; break; //Comprobación del movimiento NE
+                case moveW:         x--; break; //Comprobación del movimiento W
+                case moveE:         x++; break; //Comprobación del movimiento E
+                case moveSW: y++;   x--; break; //Comprobación del movimiento SW
+                case moveS:  y++;        break;//Comprobación del movimiento S
+                case moveSE: y++;   x++; break;//Comprobación del movimiento SE
+              }
+        return new Pair<>(x,y);
+    }
+
+    /**
+    *
+    * @author Kieran
+    * Devuelve las coordenadas de radar de la casilla de al lado
+    */
+
     /**
     *
     * @author Kieran
@@ -131,20 +155,21 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     private boolean puedeMover(Accion sigAccion) {
         int x,y,z=0;
-        
-        Pair<Integer,Integer> coords = movimientoEnRadar(sigAccion, centro_radar);
+
+        Pair<Integer,Integer> coords = movimientoEnMapa(sigAccion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
-        
+        z = gps.z;
+
         switch(sigAccion){
                 case moveDW: z = -5;     break;
                 case moveUP: z = 5;      break;
         }
-        
-        return(gps.z+z >= radar[x][y] && radar[x][y] >= min_z && gps.z+z <= max_z);
+
+        return(enLimites(x,y) && gps.z+z >= mapa[x][y] && mapa[x][y] >= min_z && gps.z+z <= max_z);
     }
-    
-    
+
+
     /**
     *
     * @author Monica, Kieran
@@ -152,19 +177,19 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     protected boolean puedeSubir(Accion sigAccion){
         boolean sube = true;
-        int x,y,z=0;
-        
-        Pair<Integer,Integer> coords = movimientoEnRadar(sigAccion, centro_radar);
+        int x,y;
+
+        Pair<Integer,Integer> coords = movimientoEnMapa(sigAccion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
-            
-        if(radar[x][y] > max_z || radar[x][y] < min_z){
+
+        if(!enLimites(x,y) || mapa[x][y] > max_z || mapa[x][y] < min_z){
             sube = false;
         }
-        
+
         return sube;
     }
-    
+
     /**
     *
     * @author Celia, Monica, Kieran
@@ -174,12 +199,12 @@ public abstract class AgenteDron extends AgenteSimple{
     * Si se pasa false como parametro, solo miria la direccion y no comprueba la validez
     */
     private Accion siguienteDireccion(){ return siguienteDireccion(true); }
-    
+
     private Accion siguienteDireccion(boolean comprobar_validez){
         final int dirs = 8;
         final int MAX = 999;
         final float grados_entre_dir = 45;
-        
+
         boolean validos[] = {true,true,true,true,true,true,true,true};
         //System.out.println(accion_anterior.value);
         if(comprobar_validez) {
@@ -198,13 +223,13 @@ public abstract class AgenteDron extends AgenteSimple{
             if(dist_real < diff_menor){
                 indice_menor = i;
                 diff_menor = dist_real;
-                
+
                 //System.out.println("angulo: " + gonio.angulo + "accion escogido: " + Accion.valueOfAccion(i));
-                
+
             }
         }
         if(indice_menor == MAX) return logout;
-        
+
         return Accion.valueOfAccion(indice_menor);
     }
 
@@ -216,17 +241,17 @@ public abstract class AgenteDron extends AgenteSimple{
     private boolean estaEnMemoria(Accion accion)
     {
         int x,y,z=0;
-        
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, 0);
-        y = coords.getKey(); //Al reves intencionalmente, coordenadas en mapa != en matriz
-        x = coords.getValue();
 
-      
-      if(x < 0 || y < 0 || x > max_x || y > max_y) return true; //Para no salirse de la matriz
+        Pair<Integer,Integer> coords = movimientoEnMapa(accion, gps.x, gps.y);
+        x = coords.getKey();
+        y = coords.getValue();
+
+
+      if(!enLimites(x,y)) return true; //Para no salirse de la matriz
 
       return (memoria[x][y] == true);
     }
-         
+
     /**
     *
     * @author Ana, Kieran
@@ -234,21 +259,24 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     private int unidadesBajada(int x, int y){
       int movs;
-      movs = gps.z - radar[x][y]; //Cada bajada conlleva 5 unidades. Calculamos en funcion de la altura cuantos movimientos necesitamos para llegar al suelo
+      movs = gps.z - mapa[x][y]; //Cada bajada conlleva 5 unidades. Calculamos en funcion de la altura cuantos movimientos necesitamos para llegar al suelo
       //if(repostando) System.out.println(movs/5);
       return movs;
     }
-    
+
     /**
     *
     * @author Kieran, Ana
     */
     private boolean necesitaRepostar(Accion accion){
-        int x=0,y=0;
-        
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, centro_radar);
+        int x,y;
+
+        Pair<Integer,Integer> coords = movimientoEnMapa(accion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
+
+        if(!enLimites(x,y)) return false; //ERROR
+
         double fuel_necesario = unidadesBajada(x, y)/(1.0*unidades_updown) * consumo_fuel + 2*consumo_fuel;
 
         return fuel <= fuel_necesario;
@@ -258,17 +286,17 @@ public abstract class AgenteDron extends AgenteSimple{
     *
     * @author Celia, Kieran
     */
-    
+
     private Accion reglaManoDerecha(){
-        
+
         int enCola = mano_dcha.peek().value; //Obtener valor de la primera accion en cola
         Accion siguiente;
         boolean pasado=false;
         for(int i=0; i<8; i++){
             siguiente = valueOfAccion((8+enCola-i)%8); //+8 para evitar modulos negativos
-            if(siguiente.value==accion_anterior.value) 
+            if(siguiente.value==accion_anterior.value)
                 pasado=true;
-                
+
             if(puedeMover(siguiente)){
                 if(siguiente.value == enCola)
                     mano_dcha.pop();
@@ -279,7 +307,7 @@ public abstract class AgenteDron extends AgenteSimple{
             else if(puedeSubir(siguiente))
                 return moveUP;
         }
-                
+
         return moveDW; //placeholder - borrar ahora
     }
 
@@ -293,9 +321,10 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     protected Accion comprobarAccion(){
       Accion accion = null;
-      
-      if(repostando) return checkRepostaje(accion);
-      
+
+      Accion tmp = checkRepostaje(accion);
+      if(tmp != null) return tmp;
+
       accion = checkMeta();
       if(accion != null) return accion;
 
@@ -303,11 +332,11 @@ public abstract class AgenteDron extends AgenteSimple{
       accion = checkRepostaje(accion);
       accion = checkManoDerecha(accion);
       return accion;
-      
+
     }
-    
+
     /**
-    * 
+    *
     * @author Kieran
     * Limpieza de las diversas funcionalidades de comprobarAccion
     */
@@ -318,34 +347,38 @@ public abstract class AgenteDron extends AgenteSimple{
         return null;
     }
     protected Accion checkRepostaje(Accion accion){
-        if(necesitaRepostar(accion) /*&& puedeRepostar()*/) { //PRAC3 -- DESCOMENTAR
+        if(repostando || (necesitaRepostar(accion) /*&& puedeRepostar()*/)) { //PRAC3 -- DESCOMENTAR
             repostando = true;
-          if(gps.z == radar[centro_radar][centro_radar]){
-            repostando = false;
-            return refuel;
-          }
-          return moveDW;
+            if(gps.z == mapa[gps.x][gps.y]){
+                repostando = false;
+                return refuel;
+            }
+            return moveDW;
         }
         return accion;
     }
     protected Accion checkNavegacionNormal(Accion accion){
         int x,y=0;
 
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, centro_radar);
+        Pair<Integer,Integer> coords = movimientoEnMapa(accion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
 
-        if(radar[x][y]==0) //Si la hemos liado, salir
-            return logout;
-        else if(radar[x][y] <= gps.z) //Estamos a la altura de la celda a la que queremos ir o superor
+        if(enLimites(x,y)) System.out.println("mapa[x][y] = " + mapa[x][y] + " x="+x + " y="+y);
+        else System.out.println("mapa[x][y] = OUT OF BOUNDS");
+
+        if(!enLimites(x,y))
+            return accion; //ERROR
+
+        if(mapa[x][y] <= gps.z) //Estamos a la altura de la celda a la que queremos ir o superor
             return accion;
-        else if(radar[x][y] > gps.z && (gps.z+5 <= max_z) && puedeSubir(accion)) //La celda a la que queremos ir esta a una altura superior y podemos llegar a ella
+        else if(mapa[x][y] > gps.z && puedeSubir(accion)) //La celda a la que queremos ir esta a una altura superior y podemos llegar a ella
             return moveUP;
-        return stop;
+        return accion; //ERROR
     }
     protected Accion checkManoDerecha(Accion accion){
-      if(!mano_dcha.empty()) { 
-          accion = reglaManoDerecha(); 
+      if(!mano_dcha.empty()) {
+          accion = reglaManoDerecha();
         /*System.out.println(mano_dcha.toString());*/
       } //REGLA DE MANO DERECHA
       if(accion_anterior != null && accion_anterior.value < 8 && (accion_anterior.value+4)%8 == accion.value) { //Si estamos atrapado en un bucle, ACTIVAMOS MANO DERECHA
@@ -363,6 +396,136 @@ public abstract class AgenteDron extends AgenteSimple{
 
     /**
     *
+    * @author Monica
+    * Decodifica el primer mensaje del burocrata
+    * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
+    */
+    private void JSONDecode_Inicial(JsonObject mensaje){
+        System.out.println("a");
+        session = mensaje.get("session").asString();
+        max_x = mensaje.get("dimx").asInt();
+        max_y = mensaje.get("dimy").asInt();
+        System.out.println("aa");
+
+        JsonArray mapa_recibido = mensaje.get("map").asArray();
+        mapa = new int[max_x][max_y];
+        for(int i=0; i<max_x; i++){
+            for(int j=0; j<max_y; j++){
+                mapa[i][j] = mapa_recibido.get(j+i*max_y).asInt();
+            }
+        }
+        System.out.println("aaa");
+        ini_x = mensaje.get("x").asInt();
+        ini_y = mensaje.get("y").asInt();
+
+        clave = ultimo_mensaje_recibido.getConversationId();
+    }
+
+
+    /**
+    *
+    * @author Monica
+    * Decodifica el primer mensaje del controller
+    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
+    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
+    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
+    * "direction": accion}, ...] }}:CONVERSATION-ID@
+    */
+    protected void JSONDecode_variables(JsonObject mensaje){
+        //Extraer los valores asociados al GPS
+        mensaje = mensaje.get("result").asObject();
+        System.out.println(mensaje);
+
+        gps.x = mensaje.get("gps").asObject().get("x").asInt();
+        gps.y = mensaje.get("gps").asObject().get("y").asInt();
+        gps.z = mensaje.get("gps").asObject().get("z").asInt();
+
+        //Exraer los valores asociados al infrared
+        JsonArray vector_inf = mensaje.get("infrared").asArray();
+        for(int i=0; i<tamanio_radar; i++){
+            for(int j=0; j<tamanio_radar; j++){
+                infrared[i][j] = vector_inf.get(j+i*tamanio_radar).asInt();
+            }
+        }
+        //Extraer los valores asociados al gonio
+        //gonio.angulo = mensaje.get("gonio").asObject().get("angle").asFloat();
+        //gonio.distancia = mensaje.get("gonio").asObject().get("distance").asFloat();
+
+        //Extraer el valor del combustible
+        fuel = mensaje.get("fuel").asFloat();
+
+        //Extraer informacion sobre si nos hallamos en una meta
+        //goal = mensaje.get("goal").asBoolean();
+
+        //Extraer información sobre el estado del dron
+        status = mensaje.get("status").asString();
+
+        //Extraer valores asociado a awacs
+        //awacs = mensaje.get("awacs");
+    }
+
+
+    /**
+    *
+    * @author Monica
+    * Decodifica el primer mensaje del controller
+    *
+    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
+    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
+    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
+    * "direction": accion}, ...] }}:CONVERSATION-ID@
+    */
+    private String JSONEncode_variables(JsonObject mensaje){
+        JsonObject a = new JsonObject();
+
+        JsonObject coordenadas = new JsonObject();
+        coordenadas.add("x", gps.x);
+        coordenadas.add("y", gps.y);
+        coordenadas.add("z", gps.z);
+        a.add("gps", coordenadas);
+
+        //infrared
+        JsonArray inf = new JsonArray();
+        for(int i=0; i<max_y; i++){
+            for(int j=0; j<max_x; j++){
+                inf.add( mapa[i][j] );
+            }
+        }
+        a.add("infrared", inf);
+
+        //gonio
+        JsonObject g = new JsonObject();
+        g.add("distance", gonio.distancia);
+        g.add("distance", gonio.angulo);
+        a.add("gonio", g);
+
+        //fuel
+        a.add("fuel", fuel);
+
+        //status
+        a.add("status", status);
+
+        //awacs
+        a.add("awacs", awacs);
+        return a.asString();
+    }
+
+    /**
+    *
+    * @author Monica
+    * Decodifica el mapa actualizado por parte del burocrata
+    */
+    protected void JSONDecode_ActualizarMapa(JsonObject mensaje){
+        JsonArray mapa_recibido = mensaje.get("map").asArray();
+        for(int i=0; i<max_x; i++){
+            for(int j=0; j<max_y; j++){
+                mapa[i][j] = mapa_recibido.get(j+i*max_y).asInt();
+            }
+        }
+    }
+
+    /**
+    *
     * @author Kieran
     */
     protected String JSONCommand(String content){
@@ -371,164 +534,26 @@ public abstract class AgenteDron extends AgenteSimple{
         return a.toString();
     }
 
+    /**
+    *
+    * @author Kieran, Mónica
+    */
+    protected void checkin(){
+        String mensaje;
 
-    /**
-    *
-    * @author Monica
-    * Decodifica el primer mensaje del burocrata
-    * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
-    */
-    private void JSONDecode_Inicial(JsonObject mensaje){
-        session = mensaje.get("session").asString();
-        max_x = mensaje.get("dimx").asInt();
-        max_y = mensaje.get("dimy").asInt();
-        
-        JsonArray mapa_recibido = mensaje.get("map").asArray();
-        for(int i=0; i<radar.length; i++){
-            for(int j=0; j<radar.length; j++){
-                mapa[i][j] = mapa_recibido.get(j+i*radar.length).asInt();
-            }
-        }
-        
-        clave = ultimo_mensaje_recibido.getConversationId();
-    }
-    
-    /**
-    *
-    * @author Monica, Kieran
-    */
-    protected String JSONEncode_Inicial(){
         JsonObject a = new JsonObject();
         a.add("command", "checkin");
         a.add("session", session);
         a.add("rol", rol);
         a.add("x", ini_x);
         a.add("y", ini_y);
-        return a.toString();
-    }
-    
-    
-    /**
-    *
-    * @author Monica
-    * Decodifica el primer mensaje del controller
-    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
-    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
-    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
-    * "direction": accion}, ...] }}:CONVERSATION-ID@
-    */
-    private void JSONDecode_variables(JsonObject mensaje){
-        //Extraer los valores asociados al GPS
-        gps.x = mensaje.get("gps").asObject().get("x").asInt();
-        gps.y = mensaje.get("gps").asObject().get("y").asInt();
-        gps.z = mensaje.get("gps").asObject().get("z").asInt();
-        
-        //Exraer los valores asociados al infrared
-        JsonArray vector = mensaje.get("infrared").asArray();
-        for(int i=0; i<radar.length; i++){
-            for(int j=0; j<radar.length; j++){
-                infrared[i][j] = vector.get(j+i*radar.length).asInt();
-            }
-        }
-        
-        //Extraer los valores asociados al gonio
-        gonio.angulo = mensaje.get("gonio").asObject().get("angle").asFloat();
-        gonio.distancia = mensaje.get("gonio").asObject().get("distance").asFloat();
-        
-        //Extraer el valor del combustible
-        fuel = mensaje.get("fuel").asFloat();
-        
-        //Extraer informacion sobre si nos hallamos en una meta
-        goal = mensaje.get("goal").asBoolean();
-        
-        //Extraer información sobre el estado del dron
-        status = mensaje.get("status").asString();
-        
-        //Extraer valores asociado a awacs
-        awacs = mensaje.get("awacs");
-        
-        clave = ultimo_mensaje_recibido.getConversationId();
-    }
-    
-    
-    /**
-    *
-    * @author Monica
-    * Decodifica el primer mensaje del controller
-    * 
-    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
-    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
-    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
-    * "direction": accion}, ...] }}:CONVERSATION-ID@
-    */
-    private String JSONEncode_variables(JsonObject mensaje){
-        JsonObject a = new JsonObject();
-        
-        JsonObject coordenadas = new JsonObject();
-        coordenadas.add("x", gps.x);
-        coordenadas.add("y", gps.y);
-        coordenadas.add("z", gps.z);
-        a.add("gps", coordenadas);
-        
-        //infrared
-        JsonArray inf = new JsonArray();
-        for(int i=0; i<max_y; i++){
-            for(int j=0; j<max_x; j++){
-                inf.add( mapa[i][j] );
-            }            
-        }
-        a.add("infrared", inf);
-        
-        //gonio
-        JsonObject g = new JsonObject();
-        g.add("distance", gonio.distancia);
-        g.add("distance", gonio.angulo);
-        a.add("gonio", g);
-        
-        //fuel
-        a.add("fuel", fuel);
-        
-        //status
-        a.add("status", status);
-        
-        //awacs
-        a.add("awacs", awacs);
-        return a.asString();
-    }
-    
-    /**
-    *
-    * @author Monica
-    * Decodifica el mapa actualizado por parte del burocrata
-    */
-    private void JSONDecode_ActualizarMapa(JsonObject mensaje){        
-        JsonArray mapa_recibido = mensaje.get("map").asArray();
-        for(int i=0; i<radar.length; i++){
-            for(int j=0; j<radar.length; j++){
-                mapa[i][j] = mapa_recibido.get(j+i*radar.length).asInt();
-            }
-        }
-    }
+        mensaje = a.toString();
 
-    /**
-    *
-    * @author Kieran, Mónica
-    */
-    protected void checkin(){
-        String mensaje = JSONCommand("checkin");
-        
-        JsonObject a = new JsonObject();
-        a.add("session", session);
-        a.add("rol", rol);
-        a.add("x", gps.x);
-        a.add("y", gps.y);
-        mensaje = mensaje + a.toString();
-        
         comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
     protected void move(Accion accion){
         String mensaje = JSONCommand(accion.toString());
-        comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
+        comunicar("Izar", mensaje, ACLMessage.REQUEST, clave, reply_key);
     }
     protected void refuel(){
         String mensaje = JSONCommand("refuel");
@@ -539,9 +564,9 @@ public abstract class AgenteDron extends AgenteSimple{
         comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
     protected void perception(){
-        comunicar("Izar", "", ACLMessage.QUERY_REF, clave);
+        comunicar("Izar", "", ACLMessage.QUERY_REF, clave, reply_key);
     }
-    
+
     /**
     * NUEVO CAMBIAR EN DIAGRAMA ANA
     * @author Mónica
@@ -551,7 +576,7 @@ public abstract class AgenteDron extends AgenteSimple{
         mensaje.add("objetivo-encontrado", true);
         comunicar("Izar", mensaje.asString(), ACLMessage.INFORM, clave);
     }
-    
+
     /**
     *   NUEVO CAMBIAR EN DIAGRAMA ANA
     * @author Mónica
@@ -561,23 +586,23 @@ public abstract class AgenteDron extends AgenteSimple{
         mensaje.add("objetivo-identificado", true);
         mensaje.add("x", x);
         mensaje.add("y", x);
-        
+
         //avisa al dron de rescate
         comunicar( burocrata, mensaje.asString(), ACLMessage.INFORM, clave);
     }
     protected void puedeRepostar(){
         comunicarDron(id, "repostar", ACLMessage.QUERY_IF, clave);
     }
-    
+
     //No se cual de las 2 implementar y como hacerlo
     /**
     *
     * @author Kieran
     */
-    protected boolean validarRespuesta(JsonObject a){ 
+    protected boolean validarRespuesta(JsonObject a){
         return true; //PRAC3 -- CAMBIAR
     }
-    
+
     @Override
     protected boolean validarRespuesta(ACLMessage a){//PRAC3 -- VER COMO SE HACE/BORRAR LUEGO
         return true; //PRAC3 -- CAMBIAR
@@ -597,25 +622,49 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     @Override
     public void execute() {
-        //codificar el mensaje inicial JSON aqui        
-        checkin();
+        //codificar el mensaje inicial JSON aqui
+
+        System.out.println("DRON: Inicializando");
 
         JsonObject respuesta = escuchar();
+
+        System.out.println("DRON: Msg Escuchado");
+
         JSONDecode_Inicial(respuesta);
 
-        while(validarRespuesta(respuesta))
+        System.out.println("DRON: Haciendo checkin");
+
+        checkin();
+        escuchar();
+        clave = ultimo_mensaje_recibido.getConversationId();
+        reply_key = ultimo_mensaje_recibido.getReplyWith();
+
+        System.out.println("DRON: Bucle principal");
+
+        while(validarRespuesta(respuesta) && status != "crashed")
         {
-            comprobarAccion();
+
+            System.out.println("b");
+            perception();
+            JsonObject msg = escuchar();
+            reply_key = ultimo_mensaje_recibido.getReplyWith();
+
+            System.out.println("bb");
+            JSONDecode_variables(msg);
+            Accion accion = comprobarAccion();
+            System.out.println("bbb");
+            move(accion);
             escuchar();
+            reply_key = ultimo_mensaje_recibido.getReplyWith();
         }
         if(!validarRespuesta(respuesta)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
             escuchar();
         }
-        stop();
     }
 
     @Override
     public void finalize() { //Opcional
+        comunicar("Izar", "", ACLMessage.CANCEL, clave);
         System.out.println("\nFinalizando");
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }

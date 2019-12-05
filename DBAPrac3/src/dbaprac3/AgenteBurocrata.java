@@ -32,21 +32,29 @@ public class AgenteBurocrata extends AgenteSimple {
     JsonArray mapa_recibido; //El objeto recibido por el JSON inicial que describe la imagen png del mapa
     String clave;
     String session;
-    
-    //id de los drones
-    String dronFly;
-    String dronAux;
-    String dronRescue;
-    String dronRescue2;
-    
+    AgenteDron dronFly;
+    AgenteDron dronAux;
+    AgenteDron dronRescue;
+    AgenteDron dronRescue2;
+    String nombreFly;
+    String nombreAux;
+    String nombreRescue;
+    String nombreRescue2;
     ArrayList<Integer> objetivosRecogidos = new ArrayList<>(); //Objetivos recogidos por los drones Rescue
     double fuelRestante;
-    
+
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
+
+        System.out.println("BUR: Inicializando");
+        nombreFly = "GI_Fly12";
+        dronFly = new AgenteFly(new AgentID(nombreFly));
+
+        System.out.println("BUR: Inicializado dron");
+        dronFly.start();
     }
 
-    
+
 //METODOS PARA LA GESTION DEL MAPA
     /**
     *
@@ -59,7 +67,7 @@ public class AgenteBurocrata extends AgenteSimple {
         String mapa_seleccionado = s.nextLine();
         return mapa_seleccionado;
     }
-    
+
     /**
     *
     * @author Kieran
@@ -79,14 +87,14 @@ public class AgenteBurocrata extends AgenteSimple {
         System.out.println("Mapa Descargada");
 
         mapa = new int[max_y][max_x];
-                
+
         for(int i = 0; i < max_y; i++){
-            for(int j = 0; j < max_x; j++) mapa[i][j] = image.getRGB( j, i ) & 0xff;
+            for(int j = 0; j < max_x; j++) mapa[i][j] = image.getRGB( i, j ) & 0xff;
         }
-        
+
     }
-    
-    
+
+
 //METODOS DE COMUNICACION CON EL CONTROLLER
     /**
     *
@@ -118,24 +126,24 @@ public class AgenteBurocrata extends AgenteSimple {
         max_x = mensaje.get("dimx").asInt();
         max_y = mensaje.get("dimy").asInt();
         mapa_recibido = mensaje.get("map").asArray();
-        
+
         clave = ultimo_mensaje_recibido.getConversationId();
     }
-    
+
     /**
-    * 
+    *
     * @author Monica
     * Convierte el mapa en un array Json
     */
-    private JsonArray JSON_Mapa(){        
+    private JsonArray JSON_Mapa(){
         //Codificando el mapa
         JsonArray map = new JsonArray();
         for(int i=0; i<max_y; i++){
             for(int j=0; j<max_x; j++){
                 map.add( mapa[i][j] );
-            }            
+            }
         }
-        
+
         return map;
     }
 
@@ -147,17 +155,17 @@ public class AgenteBurocrata extends AgenteSimple {
     */
     private String JSONEncode_InicialDron(){
         JsonObject a = new JsonObject();
-        
+
         a.add("result", "OK");
         a.add("session", session);
         a.add("dimx", max_x);
         a.add("dimy", max_y);
-        
+
         //Codificando el mapa
         JsonArray map = new JsonArray();
         map = JSON_Mapa();
         a.add("map",map);
-        
+
         a.add("x", 0); //PRAC3 -- CAMBIAR DESPUES
         a.add("y", 0); //PRAC3 -- CAMBIAR DESPUES
         a.add("estado", "EXPLORACION" );
@@ -165,7 +173,7 @@ public class AgenteBurocrata extends AgenteSimple {
         String mensaje = a.toString();
         return mensaje;
     }
-    
+
     /**
     * NUEVO AÑADIR ANA A DIAGRAMA
     * @author Monica
@@ -174,20 +182,20 @@ public class AgenteBurocrata extends AgenteSimple {
     */
     private String JSONEncode_MapaActualizar(){
         JsonObject a = new JsonObject();
-        
+
         //Codificando el mapa
         JsonArray map = new JsonArray();
         map = JSON_Mapa();
         a.add("map",map);
-        
+
         //Pasar las variable de dimension del mapa
         a.add("dimx",max_x);
         a.add("dimy",max_y);
-        
+
         String mensaje = a.toString();
         return mensaje;
     }
-    
+
     /**
     *
     * @author Mónica
@@ -195,13 +203,12 @@ public class AgenteBurocrata extends AgenteSimple {
     protected void avisarObjetivoEnontrado(){
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-encontrado", true);
-        
+
         //avisa al dron mas cercano en estado busqueda
         //calcular diferencia entre angulos para ver el mas cercano
-      
-       comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
+
     }
-        
+
     /**
     *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
     * @author Mónica
@@ -211,11 +218,11 @@ public class AgenteBurocrata extends AgenteSimple {
         mensaje.add("objetivo-identificado", true);
         mensaje.add("x", x);
         mensaje.add("y", x);
-        
+
         //avisa al dron de rescate
-        comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
+       // comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
-    
+
     /**
     *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
     * @author Mónica
@@ -223,15 +230,15 @@ public class AgenteBurocrata extends AgenteSimple {
     protected void avisarObjetivosCompletados(int x, int y){
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivos-encontrados", true);
-        
+
         //avisa al dron de rescate
-        comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
+        //comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
-    
+
         //METODOS DE CONTROL
-      
+
     /**
-    * 
+    *
     * @author Mónica
     */
     protected void responderPeticionRepostaje(String dron){
@@ -242,13 +249,13 @@ public class AgenteBurocrata extends AgenteSimple {
             comunicarDron(dron, "DENEGADO", ACLMessage.DISCONFIRM, clave);
         }
     }
-    
+
     /**
     * @author Celia
-    */ 
-    
+    */
+
     boolean puedeRepostar(AgenteDron dron){
-      
+
             if(dron==dronFly)
                 return puedenVolver(true,true,true,false);
             if(dron == dronAux)
@@ -257,26 +264,26 @@ public class AgenteBurocrata extends AgenteSimple {
 		return true;
             if(dron == dronRescue)
                 return puedenVolver(true, false, false, false) && (objetivosRecogidos.get(0)>=objetivosRecogidos.get(1) || !puedenVolver(false, true, false, false));
-            
+
             return puedenVolver(false, true, false, false) && (objetivosRecogidos.get(0)<objetivosRecogidos.get(1) || !puedenVolver(true, false, false, false));
-        
+
     }
     /**
     *
     * @author Celia
-    * 
-    *    Comprueba si pueden volver a casa los drones especificados 
+    *
+    *    Comprueba si pueden volver a casa los drones especificados
     *    (distancia hasta casa más bajada y margen "por posibles obstáculos")
     *    con el fuel general (que tiene y que puede repostar)
     *    d1 -> dronRescue  d2 -> dronRescue2   d3 -> dronFly   d4 -> dronAux
-    */ 
+    */
     boolean puedenVolver(boolean d1, boolean d2, boolean d3, boolean d4){
         int pasos=0;
         double fuelNecesario=0;
         double fuelTotal=this.fuelRestante;
         int vecesRecarga;
         AgenteDron dron =null;
-        
+
         for(int i=0; i<4; i++){
             switch (i){
                 case 0: if(d1) dron = dronRescue; break;
@@ -284,46 +291,46 @@ public class AgenteBurocrata extends AgenteSimple {
                 case 2: if(d3) dron = dronFly; break;
                 case 3: if(d4) dron = dronAux; break;
             }
-            
+
             if(dron!=null){
                  pasos = numPasos(dron.gps.x, dron.gps.y, dron.gps.z, dron.ini_x, dron.ini_y, mapa[dron.ini_x][dron.ini_y], 10); //Margen de 10 pasos
                  fuelNecesario = pasos*dron.consumo_fuel - dron.fuel; //fuel que necesita sin contar el que ya tiene
-                 
+
                  if(fuelNecesario>0){ //Si necesita
                       if(fuelTotal > fuelNecesario){
-                        vecesRecarga = (int) Math.ceil(fuelNecesario/100); //Numero de veces que necesita recargar 
+                        vecesRecarga = (int) Math.ceil(fuelNecesario/100); //Numero de veces que necesita recargar
                         fuelTotal -= vecesRecarga*100;
                       }
                       else
                           return false;
                  }
             }
-            
+
             dron=null;
         }
-        
+
         return true;
     }
-    
+
     /**
     *
     * @author Celia
-    * 
+    *
     * Numero de pasos necesarios para ir de una posicion a otra con un margen.
     */
-    
+
     int numPasos(int x_ini, int y_ini, int z_ini, int x_fin, int y_fin, int z_fin, int margen){
-        return Math.max(Math.abs(x_fin-x_ini) , Math.abs(y_fin-y_ini)) + 
+        return Math.max(Math.abs(x_fin-x_ini) , Math.abs(y_fin-y_ini)) +
                          (int) Math.ceil(Math.abs(z_fin-z_ini)/5) + margen;
     }
-    
-    
+
+
     /**
     * @author Celia
-    * 
+    *
     * El dron que rescata el objetivo encontrado es el que más cerca está del objetivo
-    */ 
-    
+    */
+
     AgenteDron quienRescata(int x, int y, int z){
         int pasosR1 = numPasos(dronRescue.gps.x, dronRescue.gps.y, dronRescue.gps.z, x, y, z, 0);
         int pasosR2 = numPasos(dronRescue2.gps.x, dronRescue2.gps.y, dronRescue2.gps.z, x, y, z, 0);
@@ -331,10 +338,10 @@ public class AgenteBurocrata extends AgenteSimple {
             return dronRescue;
         return dronRescue2;
     }
-    
-    
+
+
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
-    
+
     /**
     *
     * @author Kieran
@@ -344,33 +351,39 @@ public class AgenteBurocrata extends AgenteSimple {
         JsonObject mensaje;
         String map = seleccionarMapa();
         String a = JSONEncode_Inicial(map);
-        comunicar("Izar", a, ACLMessage.SUBSCRIBE, null);       
+        comunicar("Izar", a, ACLMessage.SUBSCRIBE, null);
+        System.out.println("BUR: Enviando petición del mapa");
         mensaje = escuchar(true);
         JSONDecode_Inicial(mensaje);
+        System.out.println("BUR: Guardando mapa");
         try {
             guardarMapa(mapa_recibido);
         } catch (Exception ex) {
             System.out.println("Excepcion: Error al obtener el mapa");
         }
-        
+        System.out.println("BUR: Inicializando drones");
          //Llamada a los drones
         String m = JSONEncode_InicialDron();
-        comunicarDron(dronFly, m, ACLMessage.INFORM, null);
-        comunicarDron(dronAux, m, ACLMessage.INFORM, null);
-        comunicarDron(dronRescue, m, ACLMessage.INFORM, null);
-        comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
-        
-        
+        System.out.println("BUR: Codificando JSON");
+        comunicar(nombreFly, m, ACLMessage.INFORM, null);
+        //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
+        //comunicarDron(dronRescue, m, ACLMessage.INFORM, null);
+        //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
+
+
         //BORRAR LUEGO - PRUEBA
+        /*
         for(int i = 0; i < max_y; i++){
             for(int j = 0; j < max_x; j++) System.out.print(String.format("%03d",mapa[i][j]) + ' ');
             System.out.print('\n');
         }
-        
+
         comunicar("Izar", "", ACLMessage.CANCEL, clave);
         escuchar(true);
         escuchar(true);
+        */
         //FIN DE PRUEBA
+
     }
 
     /**
@@ -381,7 +394,7 @@ public class AgenteBurocrata extends AgenteSimple {
     protected boolean validarRespuesta(ACLMessage a) {  //ACABAR LUEGO
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
     /**
     *
     * @author Kieran
@@ -389,6 +402,7 @@ public class AgenteBurocrata extends AgenteSimple {
     @Override
     public void finalize() { //Opcional
         System.out.println("\nFinalizando");
+//        comunicar("Izar", "", ACLMessage.CANCEL, clave);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
 }
