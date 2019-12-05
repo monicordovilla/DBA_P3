@@ -47,6 +47,7 @@ public abstract class AgenteSimple extends SuperAgent{
         outbox.setContent(mensaje);
         if(null != (conv_id) && !conv_id.isEmpty()) outbox.setConversationId(conv_id);
         if(null != (reply_to) && !reply_to.isEmpty()) outbox.setInReplyTo(reply_to);
+        System.out.println(outbox.toString());
         this.send(outbox);
     }
     protected void comunicar(String nombre, String mensaje, int performativa, String conv_id) {
@@ -78,7 +79,7 @@ public abstract class AgenteSimple extends SuperAgent{
 
         ultimo_mensaje_recibido = inbox;
         String mensaje = inbox.getContent();
-        if(echo) System.out.println("Mensaje recibido:\n" + mensaje);
+        if(echo) System.out.println("Mensaje recibido:\n" + mensaje + "\nRaw:\n" + inbox.toString());
         return Json.parse(mensaje).asObject();
     }
 }

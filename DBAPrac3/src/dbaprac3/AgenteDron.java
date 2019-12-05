@@ -68,11 +68,11 @@ public abstract class AgenteDron extends AgenteSimple{
     //dimensiones del mundo en el que se ha logueado, se asigna valor en el JSONDecode_Inicial
     int max_x;
     int max_y;
-    //ahora mismo no se usa, por si queremos evitar bordes
-    int min_x;
-    int min_y;
+    //por si queremos evitar bordes
+    int min_x = 0;
+    int min_y = 0;
     //altura mínima y máxima a las que el drone puede volar, se asigna valor en el JSONDecode_Inicial
-    int min_z;
+    int min_z = 0;
     int max_z;
     //PRAC3 -- posiciones iniciales para mandar en JSONEncode_Inicial
     int ini_x;
@@ -83,7 +83,7 @@ public abstract class AgenteDron extends AgenteSimple{
     int max_pasos = 10000;
     int max_pasos_repetidos = 10;
 
-    int unidades_updown; //Unidades que consume las bajadas y subidas
+    int unidades_updown = 5; //Unidades que consume las bajadas y subidas
     boolean repostando; //Actualmente esta bajando para repostar
     Stack<Accion> mano_dcha; //Pila con las direcciones a las que desea moverse
     
@@ -115,14 +115,34 @@ public abstract class AgenteDron extends AgenteSimple{
                 case moveNW: x--;   y--; break; //Comprobación del movimiento NW
                 case moveN:  x--;        break;//Comprobación del movimiento N
                 case moveNE: x--;   y++; break; //Comprobación del movimiento NE
-                case moveW:  y--;        break; //Comprobación del movimiento W
-                case moveE:  y++;        break; //Comprobación del movimiento E
+                case moveW:         y--; break; //Comprobación del movimiento W
+                case moveE:         y++; break; //Comprobación del movimiento E
                 case moveSW: x++;   y--; break; //Comprobación del movimiento SW
                 case moveS:  x++;        break;//Comprobación del movimiento S
                 case moveSE: x++;   y++; break;//Comprobación del movimiento SE
               }
         return new Pair<>(x,y);
     }
+    
+    protected Pair<Integer,Integer> movimientoEnMapa(Accion sigAccion, int x, int y){
+                switch(sigAccion) {
+                case moveNW: y--;   x--; break; //Comprobación del movimiento NW
+                case moveN:  y--;        break;//Comprobación del movimiento N
+                case moveNE: y--;   x++; break; //Comprobación del movimiento NE
+                case moveW:         x--; break; //Comprobación del movimiento W
+                case moveE:         x++; break; //Comprobación del movimiento E
+                case moveSW: y++;   x--; break; //Comprobación del movimiento SW
+                case moveS:  y++;        break;//Comprobación del movimiento S
+                case moveSE: y++;   x++; break;//Comprobación del movimiento SE
+              }
+        return new Pair<>(x,y);
+    }
+    
+    /**
+    * 
+    * @author Kieran
+    * Devuelve las coordenadas de radar de la casilla de al lado
+    */    
     
     /**
     *
@@ -132,7 +152,7 @@ public abstract class AgenteDron extends AgenteSimple{
     private boolean puedeMover(Accion sigAccion) {
         int x,y,z=0;
         
-        Pair<Integer,Integer> coords = movimientoEnRadar(sigAccion, gps.x, gps.y);
+        Pair<Integer,Integer> coords = movimientoEnMapa(sigAccion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
         z = gps.z;
@@ -153,9 +173,9 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     protected boolean puedeSubir(Accion sigAccion){
         boolean sube = true;
-        int x,y,z=0;
+        int x,y;
         
-        Pair<Integer,Integer> coords = movimientoEnRadar(sigAccion, gps.x, gps.y);
+        Pair<Integer,Integer> coords = movimientoEnMapa(sigAccion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
             
@@ -218,12 +238,12 @@ public abstract class AgenteDron extends AgenteSimple{
     {
         int x,y,z=0;
         
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, gps.x, gps.y);
-        x = coords.getKey(); //Al reves intencionalmente, coordenadas en mapa != en matriz
+        Pair<Integer,Integer> coords = movimientoEnMapa(accion, gps.x, gps.y);
+        x = coords.getKey();
         y = coords.getValue();
 
       
-      if(x < 0 || y < 0 || x > max_x || y > max_y) return true; //Para no salirse de la matriz
+      if(!enLimites(x,y)) return true; //Para no salirse de la matriz
 
       return (memoria[x][y] == true);
     }
@@ -247,9 +267,12 @@ public abstract class AgenteDron extends AgenteSimple{
     private boolean necesitaRepostar(Accion accion){
         int x,y;
         
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, gps.x, gps.y);
+        Pair<Integer,Integer> coords = movimientoEnMapa(accion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
+        
+        if(!enLimites(x,y)) return false; //ERROR
+        
         double fuel_necesario = unidadesBajada(x, y)/(1.0*unidades_updown) * consumo_fuel + 2*consumo_fuel;
 
         return fuel <= fuel_necesario;
@@ -322,26 +345,32 @@ public abstract class AgenteDron extends AgenteSimple{
     protected Accion checkRepostaje(Accion accion){
         if(repostando || (necesitaRepostar(accion) /*&& puedeRepostar()*/)) { //PRAC3 -- DESCOMENTAR
             repostando = true;
-          if(gps.z == mapa[gps.x][gps.y]){
-            repostando = false;
-            return refuel;
-          }
-          return moveDW;
+            if(gps.z == mapa[gps.x][gps.y]){
+                repostando = false;
+                return refuel;
+            }
+            return moveDW;
         }
         return accion;
     }
     protected Accion checkNavegacionNormal(Accion accion){
         int x,y=0;
 
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, gps.x, gps.y);
+        Pair<Integer,Integer> coords = movimientoEnMapa(accion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
 
+        if(enLimites(x,y)) System.out.println("mapa[x][y] = " + mapa[x][y] + " x="+x + " y="+y);
+        else System.out.println("mapa[x][y] = OUT OF BOUNDS");
+        
+        if(!enLimites(x,y))
+            return accion; //ERROR
+        
         if(mapa[x][y] <= gps.z) //Estamos a la altura de la celda a la que queremos ir o superor
             return accion;
-        else if(mapa[x][y] > gps.z && (gps.z+5 <= max_z) && puedeSubir(accion)) //La celda a la que queremos ir esta a una altura superior y podemos llegar a ella
+        else if(mapa[x][y] > gps.z && puedeSubir(accion)) //La celda a la que queremos ir esta a una altura superior y podemos llegar a ella
             return moveUP;
-        return stop;
+        return accion; //ERROR
     }
     protected Accion checkManoDerecha(Accion accion){
       if(!mano_dcha.empty()) { 
@@ -360,17 +389,6 @@ public abstract class AgenteDron extends AgenteSimple{
 //  +
 //METODOS DE JSON: Codifican y descodifican los mensajes en formato JSON para facilitar el manejo de los datos recibidos
 //PRAC3 -- NO LAS TOCAN LAS SUBLCASES, FALTAN COSAS AQUI
-
-    /**
-    *
-    * @author Kieran
-    */
-    protected String JSONCommand(String content){
-        JsonObject a = new JsonObject();
-        a.add("command", content);
-        return a.toString();
-    }
-
 
     /**
     *
@@ -418,7 +436,6 @@ public abstract class AgenteDron extends AgenteSimple{
         gps.y = mensaje.get("gps").asObject().get("y").asInt();
         gps.z = mensaje.get("gps").asObject().get("z").asInt();
         
-        System.out.println("AAAA");
         //Exraer los valores asociados al infrared
         JsonArray vector_inf = mensaje.get("infrared").asArray();
         for(int i=0; i<tamanio_radar; i++){
@@ -426,19 +443,18 @@ public abstract class AgenteDron extends AgenteSimple{
                 infrared[i][j] = vector_inf.get(j+i*tamanio_radar).asInt();
             }
         }
-        System.out.println("AAAA");
         //Extraer los valores asociados al gonio
         //gonio.angulo = mensaje.get("gonio").asObject().get("angle").asFloat();
         //gonio.distancia = mensaje.get("gonio").asObject().get("distance").asFloat();
         
         //Extraer el valor del combustible
-        //fuel = mensaje.get("fuel").asFloat();
+        fuel = mensaje.get("fuel").asFloat();
         
         //Extraer informacion sobre si nos hallamos en una meta
         //goal = mensaje.get("goal").asBoolean();
         
         //Extraer información sobre el estado del dron
-        //status = mensaje.get("status").asString();
+        status = mensaje.get("status").asString();
         
         //Extraer valores asociado a awacs
         //awacs = mensaje.get("awacs");
@@ -502,6 +518,16 @@ public abstract class AgenteDron extends AgenteSimple{
                 mapa[i][j] = mapa_recibido.get(j+i*max_y).asInt();
             }
         }
+    }
+    
+    /**
+    *
+    * @author Kieran
+    */
+    protected String JSONCommand(String content){
+        JsonObject a = new JsonObject();
+        a.add("command", content);
+        return a.toString();
     }
 
     /**
@@ -595,7 +621,7 @@ public abstract class AgenteDron extends AgenteSimple{
       
         System.out.println("DRON: Bucle principal");
         
-        while(validarRespuesta(respuesta))
+        while(validarRespuesta(respuesta) && status != "crashed")
         {
             
             System.out.println("b");
@@ -614,7 +640,6 @@ public abstract class AgenteDron extends AgenteSimple{
         if(!validarRespuesta(respuesta)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
             escuchar();
         }
-        stop();
     }
 
     @Override

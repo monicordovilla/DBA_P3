@@ -47,8 +47,7 @@ public class AgenteBurocrata extends AgenteSimple {
         super(aid);
         
         System.out.println("BUR: Inicializando");
-        
-        nombreFly = "GI_Fly5";
+        nombreFly = "GI_Fly12";
         dronFly = new AgenteFly(new AgentID(nombreFly));
         
         System.out.println("BUR: Inicializado dron");
@@ -90,7 +89,7 @@ public class AgenteBurocrata extends AgenteSimple {
         mapa = new int[max_y][max_x];
                 
         for(int i = 0; i < max_y; i++){
-            for(int j = 0; j < max_x; j++) mapa[i][j] = image.getRGB( j, i ) & 0xff;
+            for(int j = 0; j < max_x; j++) mapa[i][j] = image.getRGB( i, j ) & 0xff;
         }
         
     }
@@ -345,8 +344,7 @@ public class AgenteBurocrata extends AgenteSimple {
         escuchar(true);
         */
         //FIN DE PRUEBA
-        
-        
+       
     }
 
     /**
