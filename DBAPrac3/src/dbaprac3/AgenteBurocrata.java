@@ -277,8 +277,7 @@ public class AgenteBurocrata extends AgenteSimple {
             }
             
             if(dron!=null){
-                 pasos = Math.max(Math.abs(dronRescue.gps.x-dronRescue.ini_x) , Math.abs(dronRescue.gps.y-dronRescue.ini_y)) +
-                         dronRescue.gps.z/5 + 10; //Margen de 10 pasos
+                 pasos = numPasos(dron.gps.x, dron.gps.y, dron.gps.z, dron.ini_x, dron.ini_y, mapa[dron.ini_x][dron.ini_y], 10); //Margen de 10 pasos
                  fuelNecesario = pasos*dron.consumo_fuel - dron.fuel; //fuel que necesita sin contar el que ya tiene
                  
                  if(fuelNecesario>0){ //Si necesita
@@ -295,6 +294,33 @@ public class AgenteBurocrata extends AgenteSimple {
         }
         
         return true;
+    }
+    
+    /**
+    *
+    * @author Celia
+    * 
+    * Numero de pasos necesarios para ir de una posicion a otra con un margen.
+    */
+    
+    int numPasos(int x_ini, int y_ini, int z_ini, int x_fin, int y_fin, int z_fin, int margen){
+        return Math.max(Math.abs(x_fin-x_ini) , Math.abs(y_fin-y_ini)) + 
+                         (int) Math.ceil(Math.abs(z_fin-z_ini)/5) + margen;
+    }
+    
+    
+    /**
+    * @author Celia
+    * 
+    * El dron que rescata el objetivo encontrado es el que más cerca está del objetivo
+    */ 
+    
+    AgenteDron quienRescata(int x, int y, int z){
+        int pasosR1 = numPasos(dronRescue.gps.x, dronRescue.gps.y, dronRescue.gps.z, x, y, z, 0);
+        int pasosR2 = numPasos(dronRescue2.gps.x, dronRescue2.gps.y, dronRescue2.gps.z, x, y, z, 10);
+        if(pasosR1 >= pasosR2)
+            return dronRescue;
+        return dronRescue2;
     }
     
     
