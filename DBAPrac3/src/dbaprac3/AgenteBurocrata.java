@@ -46,9 +46,9 @@ public class AgenteBurocrata extends AgenteSimple {
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
         
-        System.out.println("BUR: Inicializando dron");
+        System.out.println("BUR: Inicializando");
         
-        nombreFly = "GI_Fly4";
+        nombreFly = "GI_Fly5";
         dronFly = new AgenteFly(new AgentID(nombreFly));
         
         System.out.println("BUR: Inicializado dron");
@@ -313,9 +313,11 @@ public class AgenteBurocrata extends AgenteSimple {
         JsonObject mensaje;
         String map = seleccionarMapa();
         String a = JSONEncode_Inicial(map);
-        comunicar("Izar", a, ACLMessage.SUBSCRIBE, null);       
+        comunicar("Izar", a, ACLMessage.SUBSCRIBE, null);    
+        System.out.println("BUR: Enviando petición del mapa");
         mensaje = escuchar(true);
         JSONDecode_Inicial(mensaje);
+        System.out.println("BUR: Guardando mapa");
         try {
             guardarMapa(mapa_recibido);
         } catch (Exception ex) {

@@ -29,7 +29,6 @@ public class AgenteFly extends AgenteDron {
         tamanio_radar = 5;
         centro_radar = 2;
         rol = "fly";
-        radar = new int[tamanio_radar][tamanio_radar];
         infrared = new int[tamanio_radar][tamanio_radar];
         
         //Cambiar si se quiere
@@ -46,30 +45,14 @@ public class AgenteFly extends AgenteDron {
     protected Accion comprobarAccion(){
       Accion accion = null;
       
-      if(repostando) return checkRepostaje(accion);
-      
-      accion = checkMeta();
-      if(accion != null) return accion;
-
       accion = (dir_norte) ? moveN : moveS;
       
       busquedaMapasAltos(accion);
+      accion = checkNavegacionNormal(accion);
       accion = checkRepostaje(accion);
-    
+          
       return accion;
         
-    }
-      
-    protected void falsoRadar(){
-        for(int x = -1; x < 2; x++){
-            for(int y = -1; y < 2; y++){   
-                System.out.println("AXX");
-                if(gps.x+x >= 0 && gps.y+y >= 0 && gps.x+x < max_x && gps.y+y < max_y)
-                    radar[centro_radar+x][centro_radar+y] = mapa[gps.x+x][gps.y+y];
-                else
-                    radar[centro_radar+x][centro_radar+y] = 0;
-            }
-        }
     }
     
     /**
@@ -78,17 +61,14 @@ public class AgenteFly extends AgenteDron {
     * Estrategia de búsqueda para mapas altos en los que el equipo esta formado por 2 Fly y 2 Rescue
     */
     public Accion busquedaMapasAltos(Accion accion){ //Cuando creemos las instancias debemos establecerle un identificador para que aqui segn eso recorra una parte del mapa
-        falsoRadar();
         
-        int x=0,y=0;
         boolean dron_demasiado_bajo = false;
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, centro_radar);
-        x = coords.getKey();
-        y = coords.getValue();
         
-        for(int i=0; i<radar.length && !dron_demasiado_bajo; i++) 
+        
+        //Comprobar el infrarojos por si hay que subir o enviar algo
+        for(int i=0; i<infrared.length && !dron_demasiado_bajo; i++) 
         {
-            for(int j=0; j<radar.length; j++)
+            for(int j=0; j<infrared.length; j++)
             {
                 if(infrared[i][j] == -1) {
                     dron_demasiado_bajo = true;//Subir si i j vale -1
@@ -103,6 +83,7 @@ public class AgenteFly extends AgenteDron {
             }
         }
 
+        //Mover a la izda/dcha si se ha llegado al limite del mapa
         if(gps.x == min_x || gps.x == max_x) { //Vemos si hemos llegado a la parte superior o inferior del mapa
             if(pasos_desplazamiento != 0) {
                 Accion dir = (dir_oeste) ? moveW : moveE; //Movemos al este u oeste segun corresponda
@@ -118,17 +99,9 @@ public class AgenteFly extends AgenteDron {
             }
         }
         
-        coords = movimientoEnRadar(accion, centro_radar);
-        x = coords.getKey();
-        y = coords.getValue();
-        
-        if(radar[x][y]==0) //Si la hemos liado, salir
-            return logout;
-        else if(dron_demasiado_bajo || (radar[x][y] > gps.z && (gps.z+5 <= max_z) && puedeSubir(accion)))
-            return moveUP;
-        else if(radar[x][y] <= gps.z) //Estamos a la altura de la celda a la que queremos ir o superor
-            return accion;
-            
+        if(dron_demasiado_bajo)
+            accion = moveUP;
+                   
         return accion;
                 
         }

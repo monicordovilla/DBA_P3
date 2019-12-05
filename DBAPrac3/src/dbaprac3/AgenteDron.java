@@ -45,7 +45,6 @@ public abstract class AgenteDron extends AgenteSimple{
     }
     
     GPS gps;
-    int[][] radar;
     int[][] infrared;
     Gonio gonio;
     float fuel;
@@ -102,13 +101,16 @@ public abstract class AgenteDron extends AgenteSimple{
 
 //METODOS DE EVALUACIÓN: La funcionalidad inteligente del agente, para decidir que hacer. PRAC3 -- **NO** LOS TOCAN LAS SUBCLASES, DRONRESCATE **NO** LAS PUEDE USAR
     
+    protected boolean enLimites(int x, int y){
+        return (x >= min_x && x < max_x && y >= min_y && y < max_y);
+    }
+    
     /**
     * 
     * @author Kieran
     * Devuelve las coordenadas de radar de la casilla de al lado
     */
-    protected Pair<Integer,Integer> movimientoEnRadar(Accion sigAccion, int offset){
-        int x = 0, y = 0;
+    protected Pair<Integer,Integer> movimientoEnRadar(Accion sigAccion, int x, int y){
         switch(sigAccion) {
                 case moveNW: x--;   y--; break; //Comprobación del movimiento NW
                 case moveN:  x--;        break;//Comprobación del movimiento N
@@ -130,16 +132,17 @@ public abstract class AgenteDron extends AgenteSimple{
     private boolean puedeMover(Accion sigAccion) {
         int x,y,z=0;
         
-        Pair<Integer,Integer> coords = movimientoEnRadar(sigAccion, centro_radar);
+        Pair<Integer,Integer> coords = movimientoEnRadar(sigAccion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
+        z = gps.z;
         
         switch(sigAccion){
                 case moveDW: z = -5;     break;
                 case moveUP: z = 5;      break;
         }
         
-        return(gps.z+z >= radar[x][y] && radar[x][y] >= min_z && gps.z+z <= max_z);
+        return(enLimites(x,y) && gps.z+z >= mapa[x][y] && mapa[x][y] >= min_z && gps.z+z <= max_z);
     }
     
     
@@ -152,11 +155,11 @@ public abstract class AgenteDron extends AgenteSimple{
         boolean sube = true;
         int x,y,z=0;
         
-        Pair<Integer,Integer> coords = movimientoEnRadar(sigAccion, centro_radar);
+        Pair<Integer,Integer> coords = movimientoEnRadar(sigAccion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
             
-        if(radar[x][y] > max_z || radar[x][y] < min_z){
+        if(!enLimites(x,y) || mapa[x][y] > max_z || mapa[x][y] < min_z){
             sube = false;
         }
         
@@ -215,9 +218,9 @@ public abstract class AgenteDron extends AgenteSimple{
     {
         int x,y,z=0;
         
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, 0);
-        y = coords.getKey(); //Al reves intencionalmente, coordenadas en mapa != en matriz
-        x = coords.getValue();
+        Pair<Integer,Integer> coords = movimientoEnRadar(accion, gps.x, gps.y);
+        x = coords.getKey(); //Al reves intencionalmente, coordenadas en mapa != en matriz
+        y = coords.getValue();
 
       
       if(x < 0 || y < 0 || x > max_x || y > max_y) return true; //Para no salirse de la matriz
@@ -232,7 +235,7 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     private int unidadesBajada(int x, int y){
       int movs;
-      movs = gps.z - radar[x][y]; //Cada bajada conlleva 5 unidades. Calculamos en funcion de la altura cuantos movimientos necesitamos para llegar al suelo
+      movs = gps.z - mapa[x][y]; //Cada bajada conlleva 5 unidades. Calculamos en funcion de la altura cuantos movimientos necesitamos para llegar al suelo
       //if(repostando) System.out.println(movs/5);
       return movs;
     }
@@ -242,9 +245,9 @@ public abstract class AgenteDron extends AgenteSimple{
     * @author Kieran, Ana
     */
     private boolean necesitaRepostar(Accion accion){
-        int x=0,y=0;
+        int x,y;
         
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, centro_radar);
+        Pair<Integer,Integer> coords = movimientoEnRadar(accion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
         double fuel_necesario = unidadesBajada(x, y)/(1.0*unidades_updown) * consumo_fuel + 2*consumo_fuel;
@@ -292,7 +295,8 @@ public abstract class AgenteDron extends AgenteSimple{
     protected Accion comprobarAccion(){
       Accion accion = null;
       
-      if(repostando) return checkRepostaje(accion);
+      Accion tmp = checkRepostaje(accion);
+      if(tmp != null) return tmp;
       
       accion = checkMeta();
       if(accion != null) return accion;
@@ -316,9 +320,9 @@ public abstract class AgenteDron extends AgenteSimple{
         return null;
     }
     protected Accion checkRepostaje(Accion accion){
-        if(necesitaRepostar(accion) /*&& puedeRepostar()*/) { //PRAC3 -- DESCOMENTAR
+        if(repostando || (necesitaRepostar(accion) /*&& puedeRepostar()*/)) { //PRAC3 -- DESCOMENTAR
             repostando = true;
-          if(gps.z == radar[centro_radar][centro_radar]){
+          if(gps.z == mapa[gps.x][gps.y]){
             repostando = false;
             return refuel;
           }
@@ -329,15 +333,13 @@ public abstract class AgenteDron extends AgenteSimple{
     protected Accion checkNavegacionNormal(Accion accion){
         int x,y=0;
 
-        Pair<Integer,Integer> coords = movimientoEnRadar(accion, centro_radar);
+        Pair<Integer,Integer> coords = movimientoEnRadar(accion, gps.x, gps.y);
         x = coords.getKey();
         y = coords.getValue();
 
-        if(radar[x][y]==0) //Si la hemos liado, salir
-            return logout;
-        else if(radar[x][y] <= gps.z) //Estamos a la altura de la celda a la que queremos ir o superor
+        if(mapa[x][y] <= gps.z) //Estamos a la altura de la celda a la que queremos ir o superor
             return accion;
-        else if(radar[x][y] > gps.z && (gps.z+5 <= max_z) && puedeSubir(accion)) //La celda a la que queremos ir esta a una altura superior y podemos llegar a ella
+        else if(mapa[x][y] > gps.z && (gps.z+5 <= max_z) && puedeSubir(accion)) //La celda a la que queremos ir esta a una altura superior y podemos llegar a ella
             return moveUP;
         return stop;
     }
@@ -495,9 +497,9 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     protected void JSONDecode_ActualizarMapa(JsonObject mensaje){        
         JsonArray mapa_recibido = mensaje.get("map").asArray();
-        for(int i=0; i<radar.length; i++){
-            for(int j=0; j<radar.length; j++){
-                mapa[i][j] = mapa_recibido.get(j+i*radar.length).asInt();
+        for(int i=0; i<max_x; i++){
+            for(int j=0; j<max_y; j++){
+                mapa[i][j] = mapa_recibido.get(j+i*max_y).asInt();
             }
         }
     }
