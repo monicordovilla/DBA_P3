@@ -93,6 +93,8 @@ public abstract class AgenteDron extends AgenteSimple{
 
     public AgenteDron(AgentID aid) throws Exception {
         super(aid);
+        gps = new GPS();
+        gonio = new Gonio();
         mano_dcha = new Stack<>();
         repostando = false;
         estado = Estado.REPOSO;
@@ -405,20 +407,24 @@ public abstract class AgenteDron extends AgenteSimple{
     * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
     * "direction": accion}, ...] }}:CONVERSATION-ID@
     */
-    private void JSONDecode_variables(JsonObject mensaje){
+    protected void JSONDecode_variables(JsonObject mensaje){
         //Extraer los valores asociados al GPS
+        mensaje = mensaje.get("result").asObject();
+        System.out.println(mensaje);
+        
         gps.x = mensaje.get("gps").asObject().get("x").asInt();
         gps.y = mensaje.get("gps").asObject().get("y").asInt();
         gps.z = mensaje.get("gps").asObject().get("z").asInt();
         
+        System.out.println("AAAA");
         //Exraer los valores asociados al infrared
-        JsonArray vector = mensaje.get("infrared").asArray();
-        for(int i=0; i<radar.length; i++){
-            for(int j=0; j<radar.length; j++){
-                infrared[i][j] = vector.get(j+i*radar.length).asInt();
+        JsonArray vector_inf = mensaje.get("infrared").asArray();
+        for(int i=0; i<tamanio_radar; i++){
+            for(int j=0; j<tamanio_radar; j++){
+                infrared[i][j] = vector_inf.get(j+i*tamanio_radar).asInt();
             }
         }
-        
+        System.out.println("AAAA");
         //Extraer los valores asociados al gonio
         gonio.angulo = mensaje.get("gonio").asObject().get("angle").asFloat();
         gonio.distancia = mensaje.get("gonio").asObject().get("distance").asFloat();
@@ -433,7 +439,7 @@ public abstract class AgenteDron extends AgenteSimple{
         status = mensaje.get("status").asString();
         
         //Extraer valores asociado a awacs
-        awacs = mensaje.get("awacs");
+        //awacs = mensaje.get("awacs");
     }
     
     
@@ -607,8 +613,8 @@ public abstract class AgenteDron extends AgenteSimple{
 
     @Override
     public void finalize() { //Opcional
+        comunicar("Izar", "", ACLMessage.CANCEL, clave);
         System.out.println("\nFinalizando");
-         comunicar("Izar", "", ACLMessage.CANCEL, clave);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
 }

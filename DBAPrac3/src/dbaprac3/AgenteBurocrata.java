@@ -363,7 +363,7 @@ public class AgenteBurocrata extends AgenteSimple {
     @Override
     public void finalize() { //Opcional
         System.out.println("\nFinalizando");
-        comunicar("Izar", "", ACLMessage.CANCEL, clave);
+//        comunicar("Izar", "", ACLMessage.CANCEL, clave);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
 }

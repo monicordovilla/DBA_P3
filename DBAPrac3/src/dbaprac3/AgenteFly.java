@@ -29,6 +29,8 @@ public class AgenteFly extends AgenteDron {
         tamanio_radar = 5;
         centro_radar = 2;
         rol = "fly";
+        radar = new int[tamanio_radar][tamanio_radar];
+        infrared = new int[tamanio_radar][tamanio_radar];
         
         //Cambiar si se quiere
         infrarojo = new ArrayList();
