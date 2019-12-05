@@ -426,17 +426,17 @@ public abstract class AgenteDron extends AgenteSimple{
         }
         System.out.println("AAAA");
         //Extraer los valores asociados al gonio
-        gonio.angulo = mensaje.get("gonio").asObject().get("angle").asFloat();
-        gonio.distancia = mensaje.get("gonio").asObject().get("distance").asFloat();
+        //gonio.angulo = mensaje.get("gonio").asObject().get("angle").asFloat();
+        //gonio.distancia = mensaje.get("gonio").asObject().get("distance").asFloat();
         
         //Extraer el valor del combustible
-        fuel = mensaje.get("fuel").asFloat();
+        //fuel = mensaje.get("fuel").asFloat();
         
         //Extraer informacion sobre si nos hallamos en una meta
-        goal = mensaje.get("goal").asBoolean();
+        //goal = mensaje.get("goal").asBoolean();
         
         //Extraer información sobre el estado del dron
-        status = mensaje.get("status").asString();
+        //status = mensaje.get("status").asString();
         
         //Extraer valores asociado a awacs
         //awacs = mensaje.get("awacs");
@@ -521,7 +521,7 @@ public abstract class AgenteDron extends AgenteSimple{
     }
     protected void move(Accion accion){
         String mensaje = JSONCommand(accion.toString());
-        comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
+        comunicar("Izar", mensaje, ACLMessage.REQUEST, clave, reply_key);
     }
     protected void refuel(){
         String mensaje = JSONCommand("refuel");
@@ -599,11 +599,15 @@ public abstract class AgenteDron extends AgenteSimple{
             System.out.println("b");
             perception();
             JsonObject msg = escuchar();
+            reply_key = ultimo_mensaje_recibido.getReplyWith();
  
             System.out.println("bb");
             JSONDecode_variables(msg);
-            comprobarAccion();
+            Accion accion = comprobarAccion();
+            System.out.println("bbb");
+            move(accion);
             escuchar();
+            reply_key = ultimo_mensaje_recibido.getReplyWith();
         }
         if(!validarRespuesta(respuesta)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
             escuchar();

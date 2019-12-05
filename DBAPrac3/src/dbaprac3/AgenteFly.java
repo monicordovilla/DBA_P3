@@ -60,12 +60,25 @@ public class AgenteFly extends AgenteDron {
         
     }
       
+    protected void falsoRadar(){
+        for(int x = -1; x < 2; x++){
+            for(int y = -1; y < 2; y++){   
+                System.out.println("AXX");
+                if(gps.x+x >= 0 && gps.y+y >= 0 && gps.x+x < max_x && gps.y+y < max_y)
+                    radar[centro_radar+x][centro_radar+y] = mapa[gps.x+x][gps.y+y];
+                else
+                    radar[centro_radar+x][centro_radar+y] = 0;
+            }
+        }
+    }
+    
     /**
     *
     * @author Ana, Kieran
     * Estrategia de búsqueda para mapas altos en los que el equipo esta formado por 2 Fly y 2 Rescue
     */
     public Accion busquedaMapasAltos(Accion accion){ //Cuando creemos las instancias debemos establecerle un identificador para que aqui segn eso recorra una parte del mapa
+        falsoRadar();
         
         int x=0,y=0;
         boolean dron_demasiado_bajo = false;
