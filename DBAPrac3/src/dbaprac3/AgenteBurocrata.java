@@ -392,7 +392,10 @@ public class AgenteBurocrata extends AgenteSimple {
         return nombreRescue2;
     }
     
-    //DESDE DONDE EMPIEZAN
+    /**
+    * @author Celia
+    *
+    */
     
     ArrayList<Integer> asignarInicio(String id){
         ArrayList<Integer> inicio = new ArrayList<>();
