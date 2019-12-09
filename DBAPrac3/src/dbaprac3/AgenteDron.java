@@ -608,6 +608,64 @@ public abstract class AgenteDron extends AgenteSimple{
         return true; //PRAC3 -- CAMBIAR
     }
 
+    /**
+    *
+    * @author Celia
+    */  
+    
+    private void actualizarDatos(){
+        comunicar("Izar", "", ACLMessage.QUERY_REF, clave, reply_key);
+        
+        ACLMessage inbox;
+        try{
+            inbox = this.receiveACLMessage();
+            JsonObject mensaje = Json.parse(inbox.getContent()).asObject();
+            while(!(inbox.getPerformative().equals("INFORM") && inbox.getConversationId().equals(clave) && !mensaje.get("result").toString().equals("OK"))){
+                this.send(inbox);
+
+                try{
+                    sleep(20);
+                    inbox = this.receiveACLMessage();
+                    mensaje = Json.parse(inbox.getContent()).asObject();
+                }catch(Exception e){
+                    System.out.println("Error de comunicación: Excepción al escuchar");
+                }
+            }     
+            
+            JSONDecode_variables(mensaje);
+        }
+        catch(Exception e){
+            System.out.println("Error de comunicación: Excepción al escuchar");
+        }
+       
+    } 
+    
+    /**
+    *
+    * NUEVO AÑADIR ANA A DIAGRAMA
+    * @author Celia
+    */  
+    
+    
+    private void responderDatos(){
+        ACLMessage inbox;
+        try{
+            inbox = this.receiveACLMessage();
+                    
+            if(!(inbox.getPerformative().equals("QUERY_REF") && inbox.getConversationId().equals("datos"))){
+                this.send(inbox);
+            }
+            else{
+                actualizarDatos();
+                String mensaje = "gps: " + gps + "fuel: " + fuel + "consumo_fuel: " + consumo_fuel + "ini_x: " + ini_x + "ini_y: " + ini_y + "id: " + id;
+                comunicar(inbox.getSender().toString(), mensaje, ACLMessage.INFORM, "datos", "datos");
+            }
+        }
+        catch(Exception e){
+            System.out.println("Error de comunicación: Excepción al escuchar");
+        }
+    }
+    
 
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
 
@@ -643,7 +701,7 @@ public abstract class AgenteDron extends AgenteSimple{
 
         while(validarRespuesta(respuesta) && status != "crashed")
         {
-
+            responderDatos();
             System.out.println("b");
             perception();
             JsonObject msg = escuchar();
