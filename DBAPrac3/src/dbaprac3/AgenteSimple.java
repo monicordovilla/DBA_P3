@@ -36,7 +36,13 @@ public abstract class AgenteSimple extends SuperAgent{
     *
     * @author Kieran
     */
-    protected abstract boolean validarRespuesta(ACLMessage a);
+    protected boolean validarRespuesta(JsonObject respuesta){
+        boolean valido = respuesta.get("result").asString().equals("ok");
+        if(!valido){
+            System.out.println("Error in response to '" + respuesta.get("in-reply-to").asString() + "': " + respuesta.get("result").asString());
+        }
+        return valido;
+    }
 
 //METODOS DE COMUNICACIÓN: Mandan mensajes al agente en el lado del servidor
 
@@ -73,6 +79,27 @@ public abstract class AgenteSimple extends SuperAgent{
     * @author Kieran
     */
     protected JsonObject escuchar(boolean echo) {
+        ACLMessage inbox = escucharPerformativa();
+
+        ultimo_mensaje_recibido = inbox;
+        String mensaje = inbox.getContent();
+        if(echo) System.out.println("Mensaje recibido:\n" + mensaje + "\nRaw:\n" + inbox.toString());
+        JsonObject m = Json.parse(mensaje).asObject();
+        
+        boolean valido = m.get("result").asString().equals("ok");
+        if(!valido){
+            System.out.println("Error in response to '" + inbox.getSender() + "': " + m.get("details").asString());
+            return null;
+        }
+        
+        return m;
+    }
+    
+    /**
+    *
+    * @author Kieran, Monica
+    */
+    protected ACLMessage escucharPerformativa() {
         ACLMessage inbox;
         try{
             inbox = this.receiveACLMessage();
@@ -81,16 +108,14 @@ public abstract class AgenteSimple extends SuperAgent{
             System.out.println("Error de comunicación: Excepción al escuchar");
             return null;
         }
-
-        ultimo_mensaje_recibido = inbox;
-        String mensaje = inbox.getContent();
-        if(echo) System.out.println("Mensaje recibido:\n" + mensaje + "\nRaw:\n" + inbox.toString());
-        return Json.parse(mensaje).asObject();
+        
+        return inbox;
+        
     }
     
     // Hebra de recepción
     /**
-    *
+    * Cada vez que llega un mensaje se llama
     * Codigo de la clase Consumer proporcionado por el profesor para el semnario 5
     */
     public void onMessage(ACLMessage msg)  {
@@ -101,4 +126,5 @@ public abstract class AgenteSimple extends SuperAgent{
             ex.printStackTrace();
         }
     }
+    
 }

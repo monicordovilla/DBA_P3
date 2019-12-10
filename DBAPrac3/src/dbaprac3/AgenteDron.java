@@ -533,6 +533,22 @@ public abstract class AgenteDron extends AgenteSimple{
         a.add("command", content);
         return a.toString();
     }
+    
+    /**
+    *
+    * @author Mónica
+    */
+    protected void cancelar(){
+        comunicar("Izar", "", ACLMessage.CANCEL, clave);
+    }
+    
+    /**
+    *
+    * @author Mónica
+    */
+    protected void preguntarAlServidor(){
+        comunicar("Izar", "", ACLMessage.QUERY_REF, clave, reply_key);
+    }
 
     /**
     *
@@ -594,20 +610,6 @@ public abstract class AgenteDron extends AgenteSimple{
         comunicar(id, "repostar", ACLMessage.QUERY_IF, clave);
     }
 
-    //No se cual de las 2 implementar y como hacerlo
-    /**
-    *
-    * @author Kieran
-    */
-    protected boolean validarRespuesta(JsonObject a){
-        return true; //PRAC3 -- CAMBIAR
-    }
-
-    @Override
-    protected boolean validarRespuesta(ACLMessage a){//PRAC3 -- VER COMO SE HACE/BORRAR LUEGO
-        return true; //PRAC3 -- CAMBIAR
-    }
-
 
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
 
@@ -622,6 +624,7 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     @Override
     public void execute() {
+        ACLMessage inbox=null;
         //codificar el mensaje inicial JSON aqui
 
         System.out.println("DRON: Inicializando");
@@ -643,7 +646,17 @@ public abstract class AgenteDron extends AgenteSimple{
 
         while(validarRespuesta(respuesta) && status != "crashed")
         {
-
+            //Espera mensaje
+            while(queue.isEmpty()){
+                //Iddle time
+            }
+            try {
+                inbox = queue.Pop();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            
             System.out.println("b");
             perception();
             JsonObject msg = escuchar();

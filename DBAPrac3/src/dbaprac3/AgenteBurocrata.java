@@ -347,10 +347,12 @@ public class AgenteBurocrata extends AgenteSimple {
 
     /**
     *
-    * @author Kieran
+    * @author Kieran, Monica
     */
     @Override
     public void execute(){
+        ACLMessage inbox=null;
+        
         JsonObject mensaje;
         String map = seleccionarMapa();
         String a = JSONEncode_Inicial(map);
@@ -369,6 +371,24 @@ public class AgenteBurocrata extends AgenteSimple {
         String m = JSONEncode_InicialDron();
         System.out.println("BUR: Codificando JSON");
         comunicar(nombreFly, m, ACLMessage.INFORM, null);
+        
+        while(validarRespuesta(mensaje)){
+            //Espera mensaje
+            while(queue.isEmpty()){
+                //Iddle time
+            }
+            try {
+                inbox = queue.Pop();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            
+        }
+        if(!validarRespuesta(mensaje)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
+            escuchar();
+        }
+        
         //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
         //comunicarDron(dronRescue, m, ACLMessage.INFORM, null);
         //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
@@ -387,15 +407,6 @@ public class AgenteBurocrata extends AgenteSimple {
         */
         //FIN DE PRUEBA
 
-    }
-
-    /**
-    *
-    * @author Kieran
-    */
-    @Override
-    protected boolean validarRespuesta(ACLMessage a) {  //ACABAR LUEGO
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     /**
