@@ -75,7 +75,7 @@ public class AgenteRescate extends AgenteDron {
         Accion opcion2=null;
         Accion defin=null;
         int d_horizontal=Math.abs(y_obj-gps.y);
-        int d_vertical=Math.abs(y_obj-gps.y);
+        int d_vertical=Math.abs(x_obj-gps.x);
         if(d_horizontal>d_vertical){
             if(gps.x<x_obj){
                 if(gps.y<y_obj){
@@ -168,9 +168,7 @@ public class AgenteRescate extends AgenteDron {
             else
                 defin=opcion2;
         }
-        if(devolverAlturaDireccion(defin)<gps.z)
-            defin=opcion1;
-        else
+        if(!super.puedeMover(defin))
             defin=Accion.moveUP;
         return defin;
     }
