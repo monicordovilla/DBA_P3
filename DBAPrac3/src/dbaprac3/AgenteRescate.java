@@ -6,7 +6,6 @@
 package dbaprac3;
 
 import com.eclipsesource.json.JsonObject;
-import static dbaprac3.AgenteDron.centro_radar;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.Stack;

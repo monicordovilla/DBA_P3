@@ -49,11 +49,12 @@ public class AgenteBurocrata extends AgenteSimple {
         super(aid);
 
         System.out.println("BUR: Inicializando");
-        nombreFly = "GI_Fly12";
-        dronFly = new AgenteFly(new AgentID(nombreFly));
+        nombreFly = "GI_Fly5";
+        nombreRescue = "GI_Rescue5";
+        new AgenteFly(new AgentID(nombreFly)).start();
+        new AgenteRescate(new AgentID(nombreRescue)).start();
 
-        System.out.println("BUR: Inicializado dron");
-        dronFly.start();
+        System.out.println("BUR: Inicializado drones");
     }
 
 
@@ -221,8 +222,10 @@ public class AgenteBurocrata extends AgenteSimple {
         mensaje.add("x", x);
         mensaje.add("y", x);
 
+        System.out.println("Avisando a rescate");
         //avisa al dron de rescate
-       // comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
+        comunicar(nombreRescue, mensaje.toString(), ACLMessage.INFORM, null); //TODO escoger que dron de rescate es: borrar esto luego
+        System.out.println("Rescate Avisado");
     }
 
     /**
@@ -464,14 +467,21 @@ public class AgenteBurocrata extends AgenteSimple {
         
         ArrayList<Integer> inicio = asignarInicio(nombreFly);
         
-        String m = JSONEncode_InicialDron(inicio.get(0), inicio.get(1));
+        String m = JSONEncode_InicialDron(0,0);/*(inicio.get(0), inicio.get(1));*/
+        String m2 = JSONEncode_InicialDron(max_x-1,max_y-1);/*(inicio.get(0), inicio.get(1));*/
         System.out.println("BUR: Codificando JSON");
         comunicar(nombreFly, m, ACLMessage.INFORM, null);
+        comunicar(nombreRescue, m2, ACLMessage.INFORM, null);
         //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
-        //comunicarDron(dronRescue, m, ACLMessage.INFORM, null);
         //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
-
-
+        
+        //PRUBEA DE RESCATE
+        for(int i = 0; i < 5; i++){
+            JsonObject coords_objetivo = escuchar();
+        System.out.println("AAAA3");
+            avisarObjetivoIdentificado(coords_objetivo.get("x").asInt(), coords_objetivo.get("y").asInt());
+        System.out.println("AAAA4");
+        }
         //BORRAR LUEGO - PRUEBA
         /*
         for(int i = 0; i < max_y; i++){
@@ -502,7 +512,7 @@ public class AgenteBurocrata extends AgenteSimple {
     */
     @Override
     public void finalize() { //Opcional
-        System.out.println("\nFinalizando");
+        System.out.println("\nFinalizando burocrata");
 //        comunicar("Izar", "", ACLMessage.CANCEL, clave);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
