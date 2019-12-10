@@ -10,6 +10,8 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import DBA.SuperAgent;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import es.upv.dsic.gti_ia.core.SingleAgent;
+import java.util.logging.Logger;
 
 /**
  *
@@ -17,11 +19,14 @@ import com.eclipsesource.json.JsonObject;
  */
 public abstract class AgenteSimple extends SuperAgent{
 
-    ACLMessage ultimo_mensaje_recibido;
+    ACLMessage ultimo_mensaje_recibido;    
     String reply_key;
+    protected MessageQueue queue;
+    protected int size = 1000;
 
     public AgenteSimple(AgentID aid) throws Exception {
         super(aid);
+        queue = new MessageQueue(size);
     }
 
 //METODOS DE JSON: Codifican y descodifican los mensajes en formato JSON para facilitar el manejo de los datos recibidos
@@ -81,5 +86,19 @@ public abstract class AgenteSimple extends SuperAgent{
         String mensaje = inbox.getContent();
         if(echo) System.out.println("Mensaje recibido:\n" + mensaje + "\nRaw:\n" + inbox.toString());
         return Json.parse(mensaje).asObject();
+    }
+    
+    // Hebra de recepción
+    /**
+    *
+    * Codigo de la clase Consumer proporcionado por el profesor para el semnario 5
+    */
+    public void onMessage(ACLMessage msg)  {
+        try {
+            queue.Push(msg); // Cada mensaje nuevo que llega se encola en el orden de llegada
+            System.out.println("\n["+this.getName()+"] Encolando: "+msg.getContent());
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
     }
 }
