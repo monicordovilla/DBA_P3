@@ -6,6 +6,7 @@
 package dbaprac3;
 
 import com.eclipsesource.json.JsonObject;
+import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.Stack;
 
@@ -20,5 +21,10 @@ public class AgenteRescate extends AgenteDron {
         consumo_fuel = 0.5;
         tamanio_radar = 1;
         centro_radar = 0;
+    }
+    
+    protected void refuel(){
+        String mensaje = JSONCommand("refuel");
+        comunicar("Izar", mensaje, ACLMessage.REQUEST, clave);
     }
 }

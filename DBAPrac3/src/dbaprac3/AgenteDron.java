@@ -65,6 +65,7 @@ public abstract class AgenteDron extends AgenteSimple{
     String clave;   //Clave que hay que enviar con cada comando que se envía
     String burocrata;
     int[][] mapa;
+    int[][] traza;
 
     //dimensiones del mundo en el que se ha logueado, se asigna valor en el JSONDecode_Inicial
     int max_x;
@@ -540,15 +541,7 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     protected void cancelar(){
         comunicar("Izar", "", ACLMessage.CANCEL, clave);
-    }
-    
-    /**
-    *
-    * @author Mónica
-    */
-    protected void preguntarAlServidor(){
-        comunicar("Izar", "", ACLMessage.QUERY_REF, clave, reply_key);
-    }
+    }    
 
     /**
     *
@@ -592,6 +585,15 @@ public abstract class AgenteDron extends AgenteSimple{
         mensaje.add("objetivo-encontrado", true);
         comunicar("Izar", mensaje.asString(), ACLMessage.INFORM, clave);
     }
+    
+    /**
+    *   
+    * @author Mónica
+    */
+    protected boolean recibirObjetivoEncontrado(){
+        JsonObject mensaje = escuchar();
+        return mensaje.get("objetivo-encontrado").asBoolean();
+    }
 
     /**
     *   NUEVO CAMBIAR EN DIAGRAMA ANA
@@ -606,8 +608,37 @@ public abstract class AgenteDron extends AgenteSimple{
         //avisa al dron de rescate
         comunicar( burocrata, mensaje.asString(), ACLMessage.INFORM, clave);
     }
+    
+    /**
+    *   
+    * @author Mónica
+    */
+    protected void recibirObjetivosCompletados(){
+        JsonObject mensaje = new JsonObject();
+        mensaje.add("objetivos-completados", true);
+        comunicar("Izar", mensaje.asString(), ACLMessage.INFORM, clave);
+    }
+    
+    /**
+    *   
+    * @author Mónica
+    */
     protected void puedeRepostar(){
         comunicar(id, "repostar", ACLMessage.QUERY_IF, clave);
+    }
+    
+    /**
+    *   
+    * @author Mónica
+    */
+    protected void recibirTraza(){
+        JsonObject mensaje = escuchar();
+        JsonArray traza_json = mensaje.get("trace").asArray();
+        for(int i=0; i<max_x; i++){
+            for(int j=0; j<max_y; j++){
+                traza[i][j] = traza_json.get(j+i*max_y).asInt();
+            }
+        }
     }
 
 
