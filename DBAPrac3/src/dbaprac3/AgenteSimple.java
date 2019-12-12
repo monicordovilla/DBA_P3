@@ -98,6 +98,29 @@ public abstract class AgenteSimple extends SuperAgent{
         return m;
     }
     
+    
+    /**
+    *
+    * @author Kieran, Monica
+    */
+    protected ACLMessage escucharACL(boolean echo) {
+        ACLMessage inbox = null;
+        while(queue.isEmpty()){
+            //Idle time
+            sleep(50);
+        }
+        try {
+            inbox = queue.Pop();
+
+            ultimo_mensaje_recibido = inbox;
+        } catch (InterruptedException ex) {
+            System.out.println("Serious error in listen");
+            Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return inbox;
+    }
+    
+    
     // Hebra de recepción
     /**
     * Cada vez que llega un mensaje se llama
