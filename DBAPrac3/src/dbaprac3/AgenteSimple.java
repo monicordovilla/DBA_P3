@@ -23,7 +23,7 @@ public abstract class AgenteSimple extends SuperAgent{
     ACLMessage ultimo_mensaje_recibido;    
     String reply_key;
     protected MessageQueue queue;
-    protected int size = 1000;
+    protected int size = 100;
 
     public AgenteSimple(AgentID aid) throws Exception {
         super(aid);
@@ -38,11 +38,7 @@ public abstract class AgenteSimple extends SuperAgent{
     * @author Kieran
     */
     protected boolean validarRespuesta(JsonObject respuesta){
-        boolean valido = respuesta.get("result").asString().equals("ok");
-        if(!valido){
-            System.out.println("Error in response to '" + respuesta.get("in-reply-to").asString() + "': " + respuesta.get("result").asString());
-        }
-        return valido;
+        return true;
     }
 
 //METODOS DE COMUNICACIÓN: Mandan mensajes al agente en el lado del servidor
@@ -84,7 +80,7 @@ public abstract class AgenteSimple extends SuperAgent{
         JsonObject m = null;
 
         while(queue.isEmpty()){
-            //Iddle time
+            //Idle time
             sleep(50);
         }
         try {
@@ -95,6 +91,7 @@ public abstract class AgenteSimple extends SuperAgent{
             if(echo) System.out.println("Mensaje recibido:\n" + mensaje + "\nRaw:\n" + inbox.toString());
             m = Json.parse(mensaje).asObject();
         } catch (InterruptedException ex) {
+            System.out.println("Serious error in listen");
             Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
         }
 

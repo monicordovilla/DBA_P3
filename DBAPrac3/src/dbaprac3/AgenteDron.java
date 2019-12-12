@@ -741,13 +741,16 @@ public abstract class AgenteDron extends AgenteSimple{
 
         System.out.println("DRON: Bucle principal");
 
-        while(validarRespuesta(respuesta) && status != "crashed")
+        while(true)
         {
+            System.out.println("AAAAAAAA");
             bucleExecute();
         }
-        if(!validarRespuesta(respuesta)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
+        //PRAC3 -- DESCOMENTAR LUEGO
+        /*if(!validarRespuesta(respuesta)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
             escuchar();
         }
+        System.out.println("Crashed normal*/
     }
     
     protected void bucleExecute(){
