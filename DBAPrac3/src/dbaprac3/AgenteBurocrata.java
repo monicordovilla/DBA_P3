@@ -439,6 +439,7 @@ public class AgenteBurocrata extends AgenteSimple {
             //Espera mensaje
             while(queue.isEmpty()){
                 //Iddle time
+                sleep(50);
             }
             try {
                 inbox = queue.Pop();
