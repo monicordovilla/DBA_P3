@@ -11,6 +11,7 @@ import DBA.SuperAgent;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import es.upv.dsic.gti_ia.core.SingleAgent;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -76,41 +77,28 @@ public abstract class AgenteSimple extends SuperAgent{
 
     /**
     *
-    * @author Kieran
-    */
-    protected JsonObject escuchar(boolean echo) {
-        ACLMessage inbox = escucharPerformativa();
-
-        ultimo_mensaje_recibido = inbox;
-        String mensaje = inbox.getContent();
-        if(echo) System.out.println("Mensaje recibido:\n" + mensaje + "\nRaw:\n" + inbox.toString());
-        JsonObject m = Json.parse(mensaje).asObject();
-        
-        boolean valido = m.get("result").asString().equals("ok");
-        if(!valido){
-            System.out.println("Error in response to '" + inbox.getSender() + "': " + m.get("details").asString());
-            return null;
-        }
-        
-        return m;
-    }
-    
-    /**
-    *
     * @author Kieran, Monica
     */
-    protected ACLMessage escucharPerformativa() {
+    protected JsonObject escuchar(boolean echo) {
         ACLMessage inbox;
-        try{
-            inbox = this.receiveACLMessage();
+        JsonObject m = null;
+
+        while(queue.isEmpty()){
+            //Iddle time
+            sleep(50);
         }
-        catch(Exception e){
-            System.out.println("Error de comunicación: Excepción al escuchar");
-            return null;
+        try {
+            inbox = queue.Pop();
+
+            ultimo_mensaje_recibido = inbox;
+            String mensaje = inbox.getContent();
+            if(echo) System.out.println("Mensaje recibido:\n" + mensaje + "\nRaw:\n" + inbox.toString());
+            m = Json.parse(mensaje).asObject();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        return inbox;
-        
+
+        return m;
     }
     
     // Hebra de recepción

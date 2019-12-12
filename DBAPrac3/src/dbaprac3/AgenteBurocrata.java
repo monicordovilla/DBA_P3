@@ -537,25 +537,16 @@ public class AgenteBurocrata extends AgenteSimple {
         System.out.println("BUR: Codificando JSON");
         comunicar(nombreFly, m, ACLMessage.INFORM, null);
         comunicar(nombreRescue, m2, ACLMessage.INFORM, null);
-        
-        while(validarRespuesta(mensaje)){
+
+//PRAC3 -- DESCOMENTAR LUEGO        
+/*        while(validarRespuesta(mensaje)){
             //Espera mensaje
-            while(queue.isEmpty()){
-                //Iddle time
-                sleep(50);
-            }
-            try {
-                inbox = queue.Pop();
-            } catch (InterruptedException ex) {
-                Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            
-            
+            escuchar();
         }
         if(!validarRespuesta(mensaje)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
             escuchar();
         }
-        
+*/      
         //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
         //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
         
