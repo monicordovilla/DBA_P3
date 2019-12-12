@@ -176,6 +176,51 @@ public class AgenteBurocrata extends AgenteSimple {
         String mensaje = a.toString();
         return mensaje;
     }
+    
+    /**
+    *   PREGUNTAR
+    * @author Monica
+    * Decodifica el estado del dron
+    *
+    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
+    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
+    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
+    * "direction": accion}, ...] }}:CONVERSATION-ID@
+    */
+    /*private String JSONEncode_variables(JsonObject mensaje){
+        JsonObject a = new JsonObject();
+
+        JsonObject coordenadas = new JsonObject();
+        coordenadas.add("x", gps.x);
+        coordenadas.add("y", gps.y);
+        coordenadas.add("z", gps.z);
+        a.add("gps", coordenadas);
+
+        //infrared
+        JsonArray inf = new JsonArray();
+        for(int i=0; i<max_y; i++){
+            for(int j=0; j<max_x; j++){
+                inf.add( mapa[i][j] );
+            }
+        }
+        a.add("infrared", inf);
+
+        //gonio
+        JsonObject g = new JsonObject();
+        g.add("distance", gonio.distancia);
+        g.add("distance", gonio.angulo);
+        a.add("gonio", g);
+
+        //fuel
+        a.add("fuel", fuel);
+
+        //status
+        a.add("status", status);
+
+        //awacs
+        a.add("awacs", awacs);
+        return a.asString();
+    }*/
 
     /**
     * NUEVO AÑADIR ANA A DIAGRAMA
@@ -200,6 +245,15 @@ public class AgenteBurocrata extends AgenteSimple {
     }
 
     /**
+    * Calcula la distancia entre 2 puntos
+    * @author Mónica
+    */
+    protected double distancia(int x1, int y1, int z1, int x2, int y2, int z2){
+        double d =  Math.sqrt( (Math.pow(x2-x1,2)) + (Math.pow(y2-y1,2)) + (Math.pow(z2-z1,2)) );
+        return d;
+    }
+
+    /**
     *
     * @author Mónica
     */
@@ -211,7 +265,16 @@ public class AgenteBurocrata extends AgenteSimple {
         //calcular diferencia entre angulos para ver el mas cercano
 
     }
-
+    
+    /**
+    *   
+    * @author Mónica
+    */
+    protected boolean recibirObjetivoEncontrado(){
+        JsonObject mensaje = escuchar();
+        return mensaje.get("objetivo-encontrado").asBoolean();
+    }
+    
     /**
     *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
     * @author Mónica
@@ -445,10 +508,12 @@ public class AgenteBurocrata extends AgenteSimple {
 
     /**
     *
-    * @author Kieran
+    * @author Kieran, Monica
     */
     @Override
     public void execute(){
+        ACLMessage inbox=null;
+        
         JsonObject mensaje;
         String map = seleccionarMapa();
         String a = JSONEncode_Inicial(map);
@@ -472,6 +537,25 @@ public class AgenteBurocrata extends AgenteSimple {
         System.out.println("BUR: Codificando JSON");
         comunicar(nombreFly, m, ACLMessage.INFORM, null);
         comunicar(nombreRescue, m2, ACLMessage.INFORM, null);
+        
+        while(validarRespuesta(mensaje)){
+            //Espera mensaje
+            while(queue.isEmpty()){
+                //Iddle time
+                sleep(50);
+            }
+            try {
+                inbox = queue.Pop();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            
+        }
+        if(!validarRespuesta(mensaje)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
+            escuchar();
+        }
+        
         //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
         //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
         
@@ -495,15 +579,6 @@ public class AgenteBurocrata extends AgenteSimple {
         */
         //FIN DE PRUEBA
 
-    }
-
-    /**
-    *
-    * @author Kieran
-    */
-    @Override
-    protected boolean validarRespuesta(ACLMessage a) {  //ACABAR LUEGO
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     /**

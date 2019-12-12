@@ -65,6 +65,7 @@ public abstract class AgenteDron extends AgenteSimple{
     String clave;   //Clave que hay que enviar con cada comando que se envía
     String burocrata;
     int[][] mapa;
+    int[][] traza;
 
     //dimensiones del mundo en el que se ha logueado, se asigna valor en el JSONDecode_Inicial
     int max_x;
@@ -538,6 +539,14 @@ public abstract class AgenteDron extends AgenteSimple{
         a.add("command", content);
         return a.toString();
     }
+    
+    /**
+    *
+    * @author Mónica
+    */
+    protected void cancelar(){
+        comunicar("Izar", "", ACLMessage.CANCEL, clave);
+    }    
 
     /**
     *
@@ -581,6 +590,15 @@ public abstract class AgenteDron extends AgenteSimple{
         mensaje.add("objetivo-encontrado", true);
         comunicar("Izar", mensaje.asString(), ACLMessage.INFORM, clave);
     }
+    
+    /**
+    *   
+    * @author Mónica
+    */
+    protected boolean recibirObjetivoEncontrado(){
+        JsonObject mensaje = escuchar();
+        return mensaje.get("objetivo-encontrado").asBoolean();
+    }
 
     /**
     *   NUEVO CAMBIAR EN DIAGRAMA ANA
@@ -597,23 +615,39 @@ public abstract class AgenteDron extends AgenteSimple{
         comunicar(burocrata, mensaje.toString(), ACLMessage.INFORM, clave);
         System.out.println("AAAA2");
     }
+    
+    /**
+    *   
+    * @author Mónica
+    */
+    protected void recibirObjetivosCompletados(){
+        JsonObject mensaje = new JsonObject();
+        mensaje.add("objetivos-completados", true);
+        comunicar("Izar", mensaje.asString(), ACLMessage.INFORM, clave);
+    }
+    
+    /**
+    *   
+    * @author Mónica
+    */
     protected void puedeRepostar(){
         comunicar(id, "repostar", ACLMessage.QUERY_IF, clave);
     }
-
-    //No se cual de las 2 implementar y como hacerlo
+    
     /**
-    *
-    * @author Kieran
+    *   
+    * @author Mónica
     */
-    protected boolean validarRespuesta(JsonObject a){
-        return true; //PRAC3 -- CAMBIAR
+    protected void recibirTraza(){
+        JsonObject mensaje = escuchar();
+        JsonArray traza_json = mensaje.get("trace").asArray();
+        for(int i=0; i<max_x; i++){
+            for(int j=0; j<max_y; j++){
+                traza[i][j] = traza_json.get(j+i*max_y).asInt();
+            }
+        }
     }
 
-    @Override
-    protected boolean validarRespuesta(ACLMessage a){//PRAC3 -- VER COMO SE HACE/BORRAR LUEGO
-        return true; //PRAC3 -- CAMBIAR
-    }
 
     /**
     *
@@ -687,6 +721,7 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     @Override
     public void execute() {
+        ACLMessage inbox=null;
         //codificar el mensaje inicial JSON aqui
 
         System.out.println("DRON: Inicializando");
