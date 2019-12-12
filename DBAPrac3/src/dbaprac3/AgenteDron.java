@@ -54,8 +54,8 @@ public abstract class AgenteDron extends AgenteSimple{
 
     //PRAC3 -- OBLIGATORIO SOBREESCRIBIR ESTOS METODOS EN SUBCLASES
     String rol;
-    static int tamanio_radar;
-    static int centro_radar;
+    int tamanio_radar;
+    int centro_radar;
     double consumo_fuel; //Consumo de fuel por movimiento
 
     String status;
@@ -65,6 +65,7 @@ public abstract class AgenteDron extends AgenteSimple{
     String clave;   //Clave que hay que enviar con cada comando que se envía
     String burocrata;
     int[][] mapa;
+    int[][] traza;
 
     //dimensiones del mundo en el que se ha logueado, se asigna valor en el JSONDecode_Inicial
     int max_x;
@@ -198,9 +199,9 @@ public abstract class AgenteDron extends AgenteSimple{
     * Se ha de tener en cuenta de que rodearObstaculoAccion solo se lanza cuando supere la altura maxima asi que se han tenido que ajustar un par de cosas
     * Si se pasa false como parametro, solo miria la direccion y no comprueba la validez
     */
-    private Accion siguienteDireccion(){ return siguienteDireccion(true); }
+    protected Accion siguienteDireccion(){ return siguienteDireccion(true); }
 
-    private Accion siguienteDireccion(boolean comprobar_validez){
+    protected Accion siguienteDireccion(boolean comprobar_validez){
         final int dirs = 8;
         final int MAX = 999;
         final float grados_entre_dir = 45;
@@ -268,7 +269,7 @@ public abstract class AgenteDron extends AgenteSimple{
     *
     * @author Kieran, Ana
     */
-    private boolean necesitaRepostar(Accion accion){
+    protected boolean necesitaRepostar(Accion accion){
         int x,y;
 
         Pair<Integer,Integer> coords = movimientoEnMapa(accion, gps.x, gps.y);
@@ -418,6 +419,8 @@ public abstract class AgenteDron extends AgenteSimple{
         ini_x = mensaje.get("x").asInt();
         ini_y = mensaje.get("y").asInt();
 
+        burocrata = ultimo_mensaje_recibido.getSender().toString();
+        
         clave = ultimo_mensaje_recibido.getConversationId();
     }
 
@@ -453,6 +456,9 @@ public abstract class AgenteDron extends AgenteSimple{
 
         //Extraer el valor del combustible
         fuel = mensaje.get("fuel").asFloat();
+        
+        //Extraer el valor de rescatados
+        torescue = mensaje.get("torescue").asInt();
 
         //Extraer informacion sobre si nos hallamos en una meta
         //goal = mensaje.get("goal").asBoolean();
@@ -533,6 +539,14 @@ public abstract class AgenteDron extends AgenteSimple{
         a.add("command", content);
         return a.toString();
     }
+    
+    /**
+    *
+    * @author Mónica
+    */
+    protected void cancelar(){
+        comunicar("Izar", "", ACLMessage.CANCEL, clave);
+    }    
 
     /**
     *
@@ -576,44 +590,71 @@ public abstract class AgenteDron extends AgenteSimple{
         mensaje.add("objetivo-encontrado", true);
         comunicar("Izar", mensaje.asString(), ACLMessage.INFORM, clave);
     }
+    
+    /**
+    *   
+    * @author Mónica
+    */
+    protected boolean recibirObjetivoEncontrado(){
+        JsonObject mensaje = escuchar();
+        return mensaje.get("objetivo-encontrado").asBoolean();
+    }
 
     /**
     *   NUEVO CAMBIAR EN DIAGRAMA ANA
     * @author Mónica
     */
     protected void avisarObjetivoIdentificado(int x, int y){
+        System.out.println("AAAA1");
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-identificado", true);
         mensaje.add("x", x);
         mensaje.add("y", x);
 
         //avisa al dron de rescate
-        comunicar( burocrata, mensaje.asString(), ACLMessage.INFORM, clave);
+        comunicar(burocrata, mensaje.toString(), ACLMessage.INFORM, clave);
+        System.out.println("AAAA2");
     }
+    
+    /**
+    *   
+    * @author Mónica
+    */
+    protected void recibirObjetivosCompletados(){
+        JsonObject mensaje = new JsonObject();
+        mensaje.add("objetivos-completados", true);
+        comunicar("Izar", mensaje.asString(), ACLMessage.INFORM, clave);
+    }
+    
+    /**
+    *   
+    * @author Mónica
+    */
     protected void puedeRepostar(){
         comunicar(id, "repostar", ACLMessage.QUERY_IF, clave);
     }
-
-    //No se cual de las 2 implementar y como hacerlo
+    
     /**
-    *
-    * @author Kieran
+    *   
+    * @author Mónica
     */
-    protected boolean validarRespuesta(JsonObject a){
-        return true; //PRAC3 -- CAMBIAR
+    protected void recibirTraza(){
+        JsonObject mensaje = escuchar();
+        JsonArray traza_json = mensaje.get("trace").asArray();
+        for(int i=0; i<max_x; i++){
+            for(int j=0; j<max_y; j++){
+                traza[i][j] = traza_json.get(j+i*max_y).asInt();
+            }
+        }
     }
 
-    @Override
-    protected boolean validarRespuesta(ACLMessage a){//PRAC3 -- VER COMO SE HACE/BORRAR LUEGO
-        return true; //PRAC3 -- CAMBIAR
-    }
 
     /**
     *
     * @author Celia
     */  
     
-    private void actualizarDatos(){
+    /*private void actualizarDatos(){
         comunicar("Izar", "", ACLMessage.QUERY_REF, clave, reply_key);
         
         ACLMessage inbox;
@@ -638,7 +679,7 @@ public abstract class AgenteDron extends AgenteSimple{
             System.out.println("Error de comunicación: Excepción al escuchar");
         }
        
-    } 
+    }*/
     
     /**
     *
@@ -647,7 +688,7 @@ public abstract class AgenteDron extends AgenteSimple{
     */  
     
     
-    private void responderDatos(){
+    /*private void responderDatos(){
         ACLMessage inbox;
         try{
             inbox = this.receiveACLMessage();
@@ -664,7 +705,7 @@ public abstract class AgenteDron extends AgenteSimple{
         catch(Exception e){
             System.out.println("Error de comunicación: Excepción al escuchar");
         }
-    }
+    }*/
     
 
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
@@ -680,6 +721,7 @@ public abstract class AgenteDron extends AgenteSimple{
     */
     @Override
     public void execute() {
+        ACLMessage inbox=null;
         //codificar el mensaje inicial JSON aqui
 
         System.out.println("DRON: Inicializando");
@@ -701,7 +743,15 @@ public abstract class AgenteDron extends AgenteSimple{
 
         while(validarRespuesta(respuesta) && status != "crashed")
         {
-            responderDatos();
+            bucleExecute();
+        }
+        if(!validarRespuesta(respuesta)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
+            escuchar();
+        }
+    }
+    
+    protected void bucleExecute(){
+            //responderDatos();
             System.out.println("b");
             perception();
             JsonObject msg = escuchar();
@@ -714,16 +764,12 @@ public abstract class AgenteDron extends AgenteSimple{
             move(accion);
             escuchar();
             reply_key = ultimo_mensaje_recibido.getReplyWith();
-        }
-        if(!validarRespuesta(respuesta)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
-            escuchar();
-        }
     }
 
     @Override
     public void finalize() { //Opcional
         comunicar("Izar", "", ACLMessage.CANCEL, clave);
-        System.out.println("\nFinalizando");
+        System.out.println("\nFinalizando" + rol);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
 }

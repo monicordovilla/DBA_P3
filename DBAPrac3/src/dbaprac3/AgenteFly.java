@@ -6,7 +6,6 @@
 package dbaprac3;
 
 import static dbaprac3.Accion.*;
-import static dbaprac3.AgenteDron.centro_radar;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import javafx.util.Pair;
@@ -72,20 +71,21 @@ public class AgenteFly extends AgenteDron {
         {
             for(int j=0; j<infrared.length; j++)
             {
-                if(infrared[i][j] == -1 && gps.z != 255) { //BUGEADO LADO DEL PROFESOR: < en vez de <= o similar
+                if(infrared[i][j] == -1) {
                     dron_demasiado_bajo = true;//Subir si i j vale -1
                 }
                 if(infrared[i][j] == 1) {
-                    Pair<Integer,Integer> coords_obj = new Pair<>(gps.x+(i-centro_radar),gps.y+(j-centro_radar));
+                    Pair<Integer,Integer> coords_obj = new Pair<>(gps.x+(j-centro_radar),gps.y+(i-centro_radar));
                     if(!infrarojo.contains(coords_obj)) {//mandar al burocrata que hay uno y la posicion
                         infrarojo.add(coords_obj);
-                        //TODO -- MANDAR AL BUROCRATA
+                        System.out.println(infrarojo);
+                        avisarObjetivoIdentificado(coords_obj.getKey(), coords_obj.getValue());
                         alemanes_debug++;
                     }
                 }
             }
         }
-
+        
         //Mover a la izda/dcha si se ha llegado al limite del mapa
         if((gps.y == min_y && dir_norte) || (gps.y == max_y-1 && !dir_norte)) { //Vemos si hemos llegado a la parte superior o inferior del mapa
             if((dir_oeste && gps.x == min_x) || (!dir_oeste && gps.x == max_x-1)) { //Vemos si estamos en el borde lateral, si estamos paramos y bajamos
