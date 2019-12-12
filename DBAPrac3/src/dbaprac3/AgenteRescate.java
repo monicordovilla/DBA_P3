@@ -17,18 +17,24 @@ import javafx.util.Pair;
  * @author Kieran
  */
 public class AgenteRescate extends AgenteDron {
-    
+        int x_obj=0;
+        int y_obj=0;
+        boolean ocioso=true;
+        
     public AgenteRescate(AgentID aid) throws Exception {
         super(aid);
         consumo_fuel = 0.5;
         tamanio_radar = 1;
         centro_radar = 0;
+        rol = "rescue";
+        max_z = 255;
+        ////////////////////////////Comprobar acción
     } 
     
     /**
     *
     * @author Pablo
-    * Estrategia de movimiento de los drones de rescate hacia un objetivo
+    * Función que devuelve la altura de la cailla a la que iría el dron dada la dirección por parámetro
     */
     public int devolverAlturaDireccion(Accion mov){
         if(mov==Accion.moveN)
@@ -54,6 +60,24 @@ public class AgenteRescate extends AgenteDron {
     /**
     *
     * @author Pablo
+    * //Método sobreescrito de la clase padre para adaptarlo al Rescue
+    */
+    @Override
+    protected Accion comprobarAccion(){
+      Accion accion;
+      if(ocioso)
+          preguntarLoQueHago();
+      accion = acercarseAlObjetivo();
+      accion = checkNavegacionNormal(accion);
+      accion = checkRepostaje(accion);
+          
+      return accion;
+        
+    }
+    
+    /**
+    *
+    * @author Pablo
     * Movimiento vertical para rescatar a un objetivo
     */
     public Accion bajarYRescatar(){
@@ -69,8 +93,9 @@ public class AgenteRescate extends AgenteDron {
     *
     * @author Pablo
     * Estrategia de movimiento de los drones de rescate hacia un objetivo
+    * Separarlo cuando pueda
     */
-    public Accion acercarseAlObjetivo(int x_obj, int y_obj){
+    public Accion acercarseAlObjetivo(){
         Accion opcion1=null;
         Accion opcion2=null;
         Accion defin=null;
@@ -168,8 +193,20 @@ public class AgenteRescate extends AgenteDron {
             else
                 defin=opcion2;
         }
-        if(!super.puedeMover(defin))
-            defin=Accion.moveUP;
         return defin;
+    }
+    
+    /**
+    *
+    * @author Pablo
+    * Función que devuelve la siguiente acción del dron y que es llamada en bucle hasta que regresa a la salida
+    */
+    public void preguntarLoQueHago(){
+        Pair<Integer,Integer> obj = new Pair<>(null,null);
+        Accion proxima=null;
+        //obj=escucharBurocrata();
+        x_obj=obj.getKey();
+        y_obj=obj.getValue();
+        ocioso=false;
     }
 }
