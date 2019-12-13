@@ -49,8 +49,8 @@ public class AgenteBurocrata extends AgenteSimple {
         super(aid);
 
         System.out.println("BUR: Inicializando");
-        nombreFly = "GI_Fly5";
-        nombreRescue = "GI_Rescue5";
+        nombreFly = "GI_Fly01";
+        nombreRescue = "GI_Rescue01";
         new AgenteFly(new AgentID(nombreFly)).start();
         new AgenteRescate(new AgentID(nombreRescue)).start();
 
@@ -283,7 +283,7 @@ public class AgenteBurocrata extends AgenteSimple {
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-identificado", true);
         mensaje.add("x", x);
-        mensaje.add("y", x);
+        mensaje.add("y", y);
 
         System.out.println("Avisando a rescate");
         //avisa al dron de rescate

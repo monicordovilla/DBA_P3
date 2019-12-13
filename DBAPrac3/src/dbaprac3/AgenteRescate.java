@@ -10,7 +10,8 @@ import static dbaprac3.Accion.*;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
-import java.util.Stack;
+import java.util.LinkedList;
+import java.util.Queue;
 import javafx.util.Pair;
 
 /**
@@ -19,9 +20,10 @@ import javafx.util.Pair;
  */
 public class AgenteRescate extends AgenteDron {
     
-    Stack<Pair<Integer,Integer>> objetivos;
+    Queue<Pair<Integer,Integer>> objetivos;
     int obj_x;
     int obj_y;
+    boolean ignorar_msg_objetivos; //Sigue escuchando si le llega un mensaje tipo objetivo
     
     public AgenteRescate(AgentID aid) throws Exception {
         super(aid);
@@ -32,9 +34,10 @@ public class AgenteRescate extends AgenteDron {
         max_z = 255;
         infrared = new int[tamanio_radar][tamanio_radar];
         
-        objetivos = new Stack<Pair<Integer,Integer>>();
+        objetivos = new LinkedList<Pair<Integer,Integer>>();
         obj_x = -1;
         obj_y = -1;
+        ignorar_msg_objetivos = true;
     } 
 
     /**
@@ -48,78 +51,108 @@ public class AgenteRescate extends AgenteDron {
         int y = mensaje.get("y").asInt();
 
         System.out.println("Rescate:procesado objetivo");
-        objetivos.push(new Pair(x,y));
+        objetivos.add(new Pair(x,y));
     }
     
+    /**
+    *
+    * @author Kieran
+    */
     @Override
     protected Accion comprobarAccion(){
       Accion accion = null;
 
-      System.out.println("cccc");
       accion = checkMeta();
       if(accion != null) return accion;
 
-        System.out.println("ccccc");
+      System.out.println("DRON-R: Cola: " + objetivos +". Obj actual: " + obj_x + " " + obj_y);  
+      
       accion = checkDirObjetivo();
       accion = checkNavegacionNormal(accion);
       accion = checkRepostaje(accion);
       return accion;
 
     }
-    
+
+    /**
+    *
+    * @author Kieran
+    */    
     protected Accion checkDirObjetivo(){
-        System.out.println("ccc");
-        double angulo_falsogonio = Math.atan2(-(gps.y-obj_y), gps.x-obj_x) * 180/Math.PI;
+        double angulo_falsogonio = Math.atan2(-(gps.x-obj_x), gps.y-obj_y) * 180/Math.PI;
+        if (angulo_falsogonio < 0) { angulo_falsogonio = 360 + angulo_falsogonio; }
         gonio.angulo = (float) angulo_falsogonio;
         gonio.distancia = 5;
         return siguienteDireccion(false);
     }
     
+    /**
+    *
+    * @author Kieran
+    */
     @Override
     protected Accion checkMeta(){
-        if( gps.x == obj_x && gps.y == obj_y || (gps.x == ini_x && gps.y == ini_y && torescue == 0) ) {
+        if( (gps.x == obj_x && gps.y == obj_y) || (gps.x == ini_x && gps.y == ini_y && torescue == 0) ) {
             if(gps.z != mapa[gps.x][gps.y]) {
                 return moveDW;
             }
             else {
-                objetivos.pop();
+                if(torescue == 0) { return stop; }
+                objetivos.poll();
+                System.out.println("DRON-R: Rescatando. Cola: " + objetivos);  
+                obj_x = -1; obj_y = -1;
                 return rescue;
             }
         }
         return null;
     }
     
-    @Override
-    protected JsonObject escuchar(){
+    protected JsonObject escuchar_until_servidor(){ //Descutrear luego. Escucha hasta que le llegue un mensaje del servidor, luego para.
         ACLMessage ultimo_mensaje_real = ultimo_mensaje_recibido;
         JsonObject escuchado = super.escuchar();
         
-            System.out.println("Esto peta?");
-        if(!escuchado.get("objetivo-encontrado").isNull()){
+        while(escuchado.get("objetivo-identificado") != null){
             recibirObjetivoEncontrado(escuchado);
             ultimo_mensaje_recibido = ultimo_mensaje_real; //Ignora mensajes del burocrata para la conversación con el servidor. Descutrear luego. 
-            System.out.println("DRON-R: Si existe el campo objetivo-encontrado");           
+            System.out.println("DRON-R: Si existe el campo objetivo-encontrado. Guardando objetivo.");  
+            escuchado = super.escuchar();
         }
-        else {
-            System.out.println("DRON-R: No existe el campo objetivo-encontrado");
-        }
+        System.out.println("DRON-R: No existe el campo objetivo-encontrado. Siguiendo.");
         return escuchado;
     }
     
+    /**
+    *
+    * @author Kieran
+    */
+    @Override
+    protected JsonObject escuchar(){
+        JsonObject escuchado;
+        
+        escuchado = (ignorar_msg_objetivos) ? escuchar_until_servidor() : super.escuchar();
+        
+        return escuchado;
+    }
+    
+    /**
+    *
+    * @author Kieran
+    */
     @Override
     protected void bucleExecute(){
         if(torescue == 0) {
             obj_x = ini_x;
             obj_y = ini_y;
         }
-        if(objetivos.empty()){
-            while(objetivos.empty()){
+        else if(objetivos.isEmpty() || obj_x == -1 || obj_y == -1){
+            ignorar_msg_objetivos = false;
+            while(objetivos.isEmpty()){
                 recibirObjetivoEncontrado(escuchar());
             }
             obj_x = objetivos.peek().getKey();
             obj_y = objetivos.peek().getValue();
-            System.out.println("cc");
         }
+        ignorar_msg_objetivos = true; //Hace falta filtrar los mensajes de que ha llegado un nuevo objetivo durante esta parte
         super.bucleExecute();
     }
 }

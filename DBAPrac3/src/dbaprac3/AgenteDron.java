@@ -582,7 +582,7 @@ public abstract class AgenteDron extends AgenteSimple{
     }
 
     /**
-    * NUEVO CAMBIAR EN DIAGRAMA ANA
+    * 
     * @author Mónica
     */
     protected void avisarObjetivoEnontrado(){
@@ -601,7 +601,7 @@ public abstract class AgenteDron extends AgenteSimple{
     }
 
     /**
-    *   NUEVO CAMBIAR EN DIAGRAMA ANA
+    *
     * @author Mónica
     */
     protected void avisarObjetivoIdentificado(int x, int y){
@@ -609,7 +609,7 @@ public abstract class AgenteDron extends AgenteSimple{
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-identificado", true);
         mensaje.add("x", x);
-        mensaje.add("y", x);
+        mensaje.add("y", y);
 
         //avisa al dron de rescate
         comunicar(burocrata, mensaje.toString(), ACLMessage.INFORM, clave);
@@ -743,7 +743,6 @@ public abstract class AgenteDron extends AgenteSimple{
 
         while(true)
         {
-            System.out.println("AAAAAAAA");
             bucleExecute();
         }
         //PRAC3 -- DESCOMENTAR LUEGO
@@ -755,15 +754,12 @@ public abstract class AgenteDron extends AgenteSimple{
     
     protected void bucleExecute(){
             //responderDatos();
-            System.out.println("b");
             perception();
             JsonObject msg = escuchar();
             reply_key = ultimo_mensaje_recibido.getReplyWith();
 
-            System.out.println("bb");
             JSONDecode_variables(msg);
             Accion accion = comprobarAccion();
-            System.out.println("bbb");
             move(accion);
             escuchar();
             reply_key = ultimo_mensaje_recibido.getReplyWith();

@@ -49,11 +49,20 @@ public class AgenteFly extends AgenteDron {
       accion = (dir_norte) ? moveN : moveS;
       
       accion = busquedaMapasAltos(accion);
+      accion = tmp();
       accion = checkNavegacionNormal(accion);
       accion = checkRepostaje(accion);
           
       return accion;
         
+    }
+    
+    protected Accion tmp() { //BORRAR LUEGO: metodo para detectar los objetivos del mapa 1 mas rapido que con el barrido
+        if (gps.x < 30) return moveSE;
+        else if (gps.x == 30 && gps.y < 90) return moveS;
+        else if (gps.x < 60) return moveE;
+        else if(gps.y > 0) return moveN;
+        else return moveDW; //Kamikaze para que se de prisa
     }
     
     /**
@@ -66,8 +75,9 @@ public class AgenteFly extends AgenteDron {
         boolean dron_demasiado_bajo = false;
         
         
+        System.out.println("DRON: INFRAROJOS: " + infrarojo);
         //Comprobar el infrarojos por si hay que subir o enviar algo
-        for(int i=0; i<infrared.length && !dron_demasiado_bajo; i++) 
+        for(int i=0; i<infrared.length; i++) 
         {
             for(int j=0; j<infrared.length; j++)
             {
@@ -78,7 +88,7 @@ public class AgenteFly extends AgenteDron {
                     Pair<Integer,Integer> coords_obj = new Pair<>(gps.x+(j-centro_radar),gps.y+(i-centro_radar));
                     if(!infrarojo.contains(coords_obj)) {//mandar al burocrata que hay uno y la posicion
                         infrarojo.add(coords_obj);
-                        System.out.println(infrarojo);
+                        System.out.println("DRON: COORDS OBJ: " + coords_obj);
                         avisarObjetivoIdentificado(coords_obj.getKey(), coords_obj.getValue());
                         alemanes_debug++;
                     }
