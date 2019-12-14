@@ -698,7 +698,7 @@ public abstract class AgenteDron extends AgenteSimple{
             }
             else{
                 actualizarDatos();
-                String mensaje = "gps: " + gps + "fuel: " + fuel + "consumo_fuel: " + consumo_fuel + "ini_x: " + ini_x + "ini_y: " + ini_y + "id: " + id;
+                String mensaje = "gps: " + gps + "fuel: " + fuel + "consumo_fuel: " + consumo_fuel ;
                 comunicar(inbox.getSender().toString(), mensaje, ACLMessage.INFORM, "datos", "datos");
             }
         }

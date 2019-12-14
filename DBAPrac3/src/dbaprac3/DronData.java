@@ -11,6 +11,10 @@ package dbaprac3;
  */
 
 class DronData {
+
+    DronData() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
     protected class GPS {
         public int x;
@@ -22,11 +26,18 @@ class DronData {
         }
     }
 
-    GPS gps = new GPS();
+    String nombre;
+    GPS gps;
     float fuel;
     double consumo_fuel; //Consumo de fuel por movimiento
     int ini_x;
     int ini_y;
-    String id;
+    Rol rol;
+    int recogidos;
     
+    DronData(String nombre){
+        this.nombre = nombre;
+        gps=new GPS();
+        recogidos=0;
+    }
 }

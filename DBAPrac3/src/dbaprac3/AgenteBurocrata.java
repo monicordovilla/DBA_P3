@@ -24,7 +24,7 @@ import com.eclipsesource.json.Json;
 
 /**
  *
- * @author Kieran
+ * @author Kieran, Celia
  */
 public class AgenteBurocrata extends AgenteSimple {
     int max_x;
@@ -33,26 +33,21 @@ public class AgenteBurocrata extends AgenteSimple {
     JsonArray mapa_recibido; //El objeto recibido por el JSON inicial que describe la imagen png del mapa
     String clave;
     String session;
-    AgenteDron dronFly;
-    AgenteDron dronAux;
-    AgenteDron dronRescue;
-    AgenteDron dronRescue2;
-    String nombreFly;
-    String nombreAux;
-    String nombreRescue;
-    String nombreRescue2;
-    ArrayList<Integer> objetivosRecogidos = new ArrayList<>(); //Objetivos recogidos por los drones Rescue
+    
+    ArrayList<DronData> drones;
     double fuelRestante;
     boolean mapaAlto=true;
 
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
+        this.drones = new ArrayList<>();
 
         System.out.println("BUR: Inicializando");
-        nombreFly = "GI_Fly01";
-        nombreRescue = "GI_Rescue01";
-        new AgenteFly(new AgentID(nombreFly)).start();
-        new AgenteRescate(new AgentID(nombreRescue)).start();
+        this.drones.add(new DronData("GI_Fly01"));
+        this.drones.add(new DronData("GI_Rescue01"));
+        
+        new AgenteFly(new AgentID(drones.get(0).nombre)).start();
+        new AgenteRescate(new AgentID(drones.get(1).nombre)).start();
 
         System.out.println("BUR: Inicializado drones");
     }
@@ -287,7 +282,7 @@ public class AgenteBurocrata extends AgenteSimple {
 
         System.out.println("Avisando a rescate");
         //avisa al dron de rescate
-        comunicar(nombreRescue, mensaje.toString(), ACLMessage.INFORM, null); //TODO escoger que dron de rescate es: borrar esto luego
+        comunicar(quienRescata(x, y), mensaje.toString(), ACLMessage.INFORM, null); //TODO escoger que dron de rescate es: borrar esto luego
         System.out.println("Rescate Avisado");
     }
 
@@ -323,17 +318,16 @@ public class AgenteBurocrata extends AgenteSimple {
     * @author Celia
     */  
     
-    private DronData obtenerDatos(String id){
-        DronData  dron = new DronData();
+    private void actualizarDatos(String id){
+        DronData  dron = getDronData(id);
         comunicar(id, "datos", ACLMessage.QUERY_REF, "datos");
         
-        ACLMessage inbox;
+        ACLMessage inbox = null;
         try{
             inbox = this.receiveACLMessage();
         }
         catch(Exception e){
             System.out.println("Error de comunicación: Excepción al escuchar");
-            return null;
         }
         
         while(!(inbox.getPerformative().equals("INFORM") && inbox.getConversationId().equals("datos") && inbox.getSender().equals(id))){
@@ -344,7 +338,6 @@ public class AgenteBurocrata extends AgenteSimple {
                 inbox = this.receiveACLMessage();
             }catch(Exception e){
                 System.out.println("Error de comunicación: Excepción al escuchar");
-                return null;
             }
         }
         
@@ -358,12 +351,16 @@ public class AgenteBurocrata extends AgenteSimple {
         dron.fuel = mensaje.get("fuel").asFloat();
         
         dron.consumo_fuel = mensaje.get("consumo_fuel").asFloat();
-        dron.ini_x = mensaje.get("ini_x").asInt();
-        dron.ini_y = mensaje.get("ini_y").asInt();        
-        dron.id = id;
+    }
+    
+    
+    DronData getDronData(String id){
+        for(DronData d : drones){
+            if(d.nombre.equals(id))
+                return d;
+        }
         
-        
-        return dron;
+        return null;
     }
     
     //METODOS DE CONTROL
@@ -373,18 +370,48 @@ public class AgenteBurocrata extends AgenteSimple {
     * @author Celia
     */
 
-    boolean puedeRepostar(String dron){ //PRACT3 -- cambiar a string
-            if(dron.equals(nombreFly))
-                return puedenVolver(true,true,true,false);
-            if(dron.equals(nombreAux))
-                return puedenVolver(true,true,false,true);
-            if(puedenVolver(true,true,false,false))        //Soy rescate y pueden volver los dos drones de rescate
-		return true;
-            if(dron.equals(nombreRescue))
-                return puedenVolver(true, false, false, false) && (objetivosRecogidos.get(0)>=objetivosRecogidos.get(1) || !puedenVolver(false, true, false, false));
+    boolean puedeRepostar(String nombre){ //PRACT3 -- cambiar a string
+        ArrayList<DronData> volver =new ArrayList<>();
+        DronData dron = getDronData(nombre);
+       
+        
+        if(dron==null)
+            return false;
 
-            return puedenVolver(false, true, false, false) && (objetivosRecogidos.get(0)<objetivosRecogidos.get(1) || !puedenVolver(true, false, false, false));
+        //actualizarDatos(nombre);
+        volver.add(dron);
+                
+        if(dron.rol==Rol.Rescue){
+            for(DronData d : drones)
+                if(d.rol==Rol.Rescue && d.recogidos>dron.recogidos){
+                    //actualizarDatos(d.nombre);
+                    volver.add(d);
+                }
+        }
+        else if(dron.rol==Rol.Fly){
+            for(DronData d : drones)
+                 if(d.rol==Rol.Rescue){
+                    //actualizarDatos(d.nombre);
+                    volver.add(d);
+                 }
+        }
+        else if(dron.rol==Rol.Sparrow){
+             for(DronData d : drones)
+                 if(d.rol==Rol.Rescue || d.rol==Rol.Fly){
+                    //actualizarDatos(d.nombre);
+                    volver.add(d);    
+                 }
+        }
+        else
+            for(DronData d : drones)
+                 if(d.rol!=Rol.Hawk){
+                    //actualizarDatos(d.nombre);
+                    volver.add(d);
+                 }
+
+        return puedenVolver(volver);
     }
+    
     /**
     *
     * @author Celia
@@ -394,41 +421,29 @@ public class AgenteBurocrata extends AgenteSimple {
     *    con el fuel general (que tiene y que puede repostar)
     *    d1 -> dronRescue  d2 -> dronRescue2   d3 -> dronFly   d4 -> dronAux
     */
-    boolean puedenVolver(boolean d1, boolean d2, boolean d3, boolean d4){
+    
+    boolean puedenVolver(ArrayList<DronData> drones){
         int pasos=0;
         double fuelNecesario=0;
         double fuelTotal=this.fuelRestante;
         int vecesRecarga;
-        DronData dron = null;
 
-        for(int i=0; i<4; i++){
-            switch (i){
-                case 0: if(d1) dron = obtenerDatos(nombreRescue); break;
-                case 1: if(d2) dron = obtenerDatos(nombreRescue2); break;
-                case 2: if(d3) dron = obtenerDatos(nombreFly); break;
-                case 3: if(d4) dron = obtenerDatos(nombreAux); break;
-            }
+        for(DronData dron : drones){
+            pasos = numPasos(dron.gps.x, dron.gps.y, dron.gps.z, dron.ini_x, dron.ini_y, mapa[dron.ini_x][dron.ini_y]) + 10; //Margen de 10 pasos
+            fuelNecesario = pasos*dron.consumo_fuel - dron.fuel; //fuel que necesita sin contar el que ya tiene
 
-            if(dron!=null){
-                 pasos = numPasos(dron.gps.x, dron.gps.y, dron.gps.z, dron.ini_x, dron.ini_y, mapa[dron.ini_x][dron.ini_y]) + 10; //Margen de 10 pasos
-                 fuelNecesario = pasos*dron.consumo_fuel - dron.fuel; //fuel que necesita sin contar el que ya tiene
-
-                 if(fuelNecesario>0){ //Si necesita
-                      if(fuelTotal > fuelNecesario){
-                        vecesRecarga = (int) Math.ceil(fuelNecesario/100); //Numero de veces que necesita recargar
-                        fuelTotal -= vecesRecarga*100;
-                      }
-                      else
-                          return false;
+            if(fuelNecesario>0){ //Si necesita
+                 if(fuelTotal > fuelNecesario){
+                   vecesRecarga = (int) Math.ceil(fuelNecesario/100); //Numero de veces que necesita recargar
+                   fuelTotal -= vecesRecarga*100;
                  }
+                 else
+                     return false;
             }
-
-            dron=null;
         }
-
         return true;
     }
-
+    
     /**
     *
     * @author Celia
@@ -448,14 +463,24 @@ public class AgenteBurocrata extends AgenteSimple {
     * El dron que rescata el objetivo encontrado es el que más cerca está del objetivo
     */
 
-    String quienRescata(int x, int y, int z){
-        DronData dronR1 = obtenerDatos(nombreRescue);
-        DronData dronR2 =  obtenerDatos(nombreRescue2);
-        int pasosR1 = numPasos(dronR1.gps.x, dronR1.gps.y, dronR1.gps.z, x, y, z);
-        int pasosR2 = numPasos(dronR2.gps.x, dronR2.gps.y, dronR2.gps.z, x, y, z);
-        if(pasosR1 <= pasosR2)
-            return nombreRescue;
-        return nombreRescue2;
+    String quienRescata(int x, int y){
+        int z = mapa[x][y];
+        DronData dron = null;
+        int pasosMin = Integer.MAX_VALUE;
+        int pasos;
+        
+        for(DronData d : drones){
+            if(d.rol==Rol.Rescue){
+                //actualizarDatos(d.nombre);
+                pasos = numPasos(d.gps.x, d.gps.y, d.gps.z, x, y, z);
+                if(pasos<pasosMin){
+                    dron=d;
+                    pasosMin=pasos;
+                }
+            }
+        }
+        
+        return dron.nombre;
     }
     
     /**
@@ -468,34 +493,25 @@ public class AgenteBurocrata extends AgenteSimple {
      
         int x=0;
         int y=0;
-        if(mapaAlto){
-            if(id.equals(nombreFly)){
-                x=Math.max(max_x/2 - 20,0);
-                y=Math.min(20, max_y);
-                
-            }else if(id.equals(nombreAux)){
-                x=Math.min(max_x/2 + 20,max_x);
-                y=Math.min(20, max_y);
-            }
-        }else{             
-            if(id.equals(nombreFly)){
-                x = Math.max(max_x/2 - 120, 0);
-                y = max_y/2;
-            }else if(id.equals(nombreAux)){
-                 x = max_x/2;
-                 y = max_y/2;
-            }
+        
+
+        if(id.equals(drones.get(0).nombre)){ //FLY1
+            x=Math.max(max_x/2-20, 0);
+
+        }else if(id.equals(drones.get(2).nombre)){ //FLY2
+            x=Math.min(max_x/2+20, max_x);
         }
         
-        if(id.equals(nombreRescue)){
-            x = max_x/4;
-            y = max_y/4;    
+        else if(id.equals(drones.get(1).nombre)){ //RESCUE1
+            y = max_y/2;    
         }
-        else if(id.equals(nombreRescue2)){
-            x = 3*max_x/4;
-            y = 3*max_y/4;    
-        }    
+        else if(id.equals(drones.get(3).nombre)){ //RESCUE2
+            x = max_x;
+            y = max_y/2;    
+        }
         
+        getDronData(id).ini_x=x;
+        getDronData(id).ini_y=y;
         
         inicio.add(x);
         inicio.add(y);  
@@ -508,7 +524,7 @@ public class AgenteBurocrata extends AgenteSimple {
 
     /**
     *
-    * @author Kieran, Monica
+    * @author Kieran, Monica, Celia
     */
     @Override
     public void execute(){
@@ -530,14 +546,15 @@ public class AgenteBurocrata extends AgenteSimple {
         System.out.println("BUR: Inicializando drones");
          //Llamada a los drones
         
-        ArrayList<Integer> inicio = asignarInicio(nombreFly);
-        
-        String m = JSONEncode_InicialDron(0,0);/*(inicio.get(0), inicio.get(1));*/
-        String m2 = JSONEncode_InicialDron(max_x-1,max_y-1);/*(inicio.get(0), inicio.get(1));*/
-        System.out.println("BUR: Codificando JSON");
-        comunicar(nombreFly, m, ACLMessage.INFORM, null);
-        comunicar(nombreRescue, m2, ACLMessage.INFORM, null);
-
+        ArrayList<Integer> inicio;
+        String m;
+        for(DronData dron : drones){
+            inicio = asignarInicio(dron.nombre);
+            m = JSONEncode_InicialDron(inicio.get(0), inicio.get(1));
+            System.out.println("BUR: Codificando JSON");
+            comunicar(dron.nombre, m, ACLMessage.INFORM, null);
+        }
+       
 //PRAC3 -- DESCOMENTAR LUEGO        
 /*        while(validarRespuesta(mensaje)){
             //Espera mensaje
