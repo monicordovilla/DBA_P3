@@ -43,8 +43,8 @@ public class AgenteBurocrata extends AgenteSimple {
         this.drones = new ArrayList<>();
 
         System.out.println("BUR: Inicializando");
-        this.drones.add(new DronData("GI_Fly01"));
-        this.drones.add(new DronData("GI_Rescue01"));
+        this.drones.add(new DronData("GI_Fly01", Rol.Fly));
+        this.drones.add(new DronData("GI_Rescue01", Rol.Rescue));
         
         new AgenteFly(new AgentID(drones.get(0).nombre)).start();
         new AgenteRescate(new AgentID(drones.get(1).nombre)).start();
@@ -252,7 +252,7 @@ public class AgenteBurocrata extends AgenteSimple {
     *
     * @author Mónica
     */
-    protected void avisarObjetivoEnontrado(){
+    protected void avisarObjetivoEncontrado(){
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-encontrado", true);
 
@@ -293,7 +293,7 @@ public class AgenteBurocrata extends AgenteSimple {
     protected void avisarObjetivosCompletados(int x, int y){
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivos-encontrados", true);
-
+        
         //avisa al dron de rescate
         //comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }

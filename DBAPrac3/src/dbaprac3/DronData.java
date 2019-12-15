@@ -35,9 +35,10 @@ class DronData {
     Rol rol;
     int recogidos;
     
-    DronData(String nombre){
+    DronData(String nombre, Rol rol){
         this.nombre = nombre;
         gps=new GPS();
         recogidos=0;
+        this.rol=rol;
     }
 }
