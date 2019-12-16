@@ -33,10 +33,15 @@ public class AgenteBurocrata extends AgenteSimple {
     JsonArray mapa_recibido; //El objeto recibido por el JSON inicial que describe la imagen png del mapa
     String clave;
     String session;
-    
+
     ArrayList<DronData> drones;
     double fuelRestante;
     boolean mapaAlto=true;
+
+    int tamCola = 100;
+    MessageQueue datos = new MessageQueue(tamCola);
+    MessageQueue repostar = new MessageQueue(tamCola);
+    MessageQueue objetivos = new MessageQueue(tamCola);
 
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
@@ -45,7 +50,7 @@ public class AgenteBurocrata extends AgenteSimple {
         System.out.println("BUR: Inicializando");
         this.drones.add(new DronData("GI_Sparrow0l1", Rol.Sparrow));
         //this.drones.add(new DronData("GI_Rescue0l1", Rol.Rescue));
-        
+
         new AgenteSparrow(new AgentID(drones.get(0).nombre)).start();
         //new AgenteRescate(new AgentID(drones.get(1).nombre)).start();
 
@@ -171,7 +176,7 @@ public class AgenteBurocrata extends AgenteSimple {
         String mensaje = a.toString();
         return mensaje;
     }
-    
+
     /**
     *   PREGUNTAR
     * @author Monica
@@ -260,16 +265,18 @@ public class AgenteBurocrata extends AgenteSimple {
         //calcular diferencia entre angulos para ver el mas cercano
 
     }
-    
+
     /**
-    *   
+    *
     * @author Mónica
+    *
+    * MODIFICAR: DEVOLVER X E Y
     */
     protected boolean recibirObjetivoEncontrado(){
         JsonObject mensaje = escuchar();
         return mensaje.get("objetivo-encontrado").asBoolean();
     }
-    
+
     /**
     *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
     * @author Mónica
@@ -293,17 +300,17 @@ public class AgenteBurocrata extends AgenteSimple {
     protected void avisarObjetivosCompletados(int x, int y){
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivos-encontrados", true);
-        
+
         //avisa al dron de rescate
         //comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
 
-    
+
     /**
     *
     * @author Mónica
     */
-    protected void responderPeticionRepostaje(String dron){ //PRACT3 -- cambiar a string 
+    protected void responderPeticionRepostaje(String dron){ //PRACT3 -- cambiar a string
         if (puedeRepostar(dron)){
             comunicar(dron, "ACEPTADO", ACLMessage.CONFIRM, clave);
         }
@@ -311,58 +318,40 @@ public class AgenteBurocrata extends AgenteSimple {
             comunicar(dron, "DENEGADO", ACLMessage.DISCONFIRM, clave);
         }
     }
-    
+
     /**
     *
     * NUEVO AÑADIR ANA A DIAGRAMA
     * @author Celia
-    */  
-    
-    private void actualizarDatos(String id){
+    */
+
+    private void actualizarDatos(ACLMessage inbox){
+        String id= inbox.getSender().toString();
         DronData  dron = getDronData(id);
         comunicar(id, "datos", ACLMessage.QUERY_REF, "datos");
-        
-        ACLMessage inbox = null;
-        try{
-            inbox = this.receiveACLMessage();
-        }
-        catch(Exception e){
-            System.out.println("Error de comunicación: Excepción al escuchar");
-        }
-        
-        while(!(inbox.getPerformative().equals("INFORM") && inbox.getConversationId().equals("datos") && inbox.getSender().equals(id))){
-            this.send(inbox);
-            
-            try{
-                sleep(20);
-                inbox = this.receiveACLMessage();
-            }catch(Exception e){
-                System.out.println("Error de comunicación: Excepción al escuchar");
-            }
-        }
-        
+
         JsonObject mensaje = Json.parse(inbox.getContent()).asObject();
-        
+
         dron.gps.x = mensaje.get("gps").asObject().get("x").asInt();
         dron.gps.y = mensaje.get("gps").asObject().get("y").asInt();
         dron.gps.z = mensaje.get("gps").asObject().get("z").asInt();
-        
+
         //Extraer el valor del combustible
         dron.fuel = mensaje.get("fuel").asFloat();
-        
+
         dron.consumo_fuel = mensaje.get("consumo_fuel").asFloat();
     }
-    
-    
+
+
     DronData getDronData(String id){
         for(DronData d : drones){
             if(d.nombre.equals(id))
                 return d;
         }
-        
+
         return null;
     }
-    
+
     //METODOS DE CONTROL
 
 
@@ -373,14 +362,14 @@ public class AgenteBurocrata extends AgenteSimple {
     boolean puedeRepostar(String nombre){ //PRACT3 -- cambiar a string
         ArrayList<DronData> volver =new ArrayList<>();
         DronData dron = getDronData(nombre);
-       
-        
+
+
         if(dron==null)
             return false;
 
         //actualizarDatos(nombre);
         volver.add(dron);
-                
+
         if(dron.rol==Rol.Rescue){
             for(DronData d : drones)
                 if(d.rol==Rol.Rescue && d.recogidos>dron.recogidos){
@@ -399,7 +388,7 @@ public class AgenteBurocrata extends AgenteSimple {
              for(DronData d : drones)
                  if(d.rol==Rol.Rescue || d.rol==Rol.Fly){
                     //actualizarDatos(d.nombre);
-                    volver.add(d);    
+                    volver.add(d);
                  }
         }
         else
@@ -411,7 +400,7 @@ public class AgenteBurocrata extends AgenteSimple {
 
         return puedenVolver(volver);
     }
-    
+
     /**
     *
     * @author Celia
@@ -421,7 +410,7 @@ public class AgenteBurocrata extends AgenteSimple {
     *    con el fuel general (que tiene y que puede repostar)
     *    d1 -> dronRescue  d2 -> dronRescue2   d3 -> dronFly   d4 -> dronAux
     */
-    
+
     boolean puedenVolver(ArrayList<DronData> drones){
         int pasos=0;
         double fuelNecesario=0;
@@ -443,7 +432,7 @@ public class AgenteBurocrata extends AgenteSimple {
         }
         return true;
     }
-    
+
     /**
     *
     * @author Celia
@@ -468,7 +457,7 @@ public class AgenteBurocrata extends AgenteSimple {
         DronData dron = null;
         int pasosMin = Integer.MAX_VALUE;
         int pasos;
-        
+
         for(DronData d : drones){
             if(d.rol==Rol.Rescue){
                 //actualizarDatos(d.nombre);
@@ -479,44 +468,66 @@ public class AgenteBurocrata extends AgenteSimple {
                 }
             }
         }
-        
+
         return dron.nombre;
     }
-    
+
     /**
     * @author Celia
     *
     */
-    
+
     ArrayList<Integer> asignarInicio(String id){
         ArrayList<Integer> inicio = new ArrayList<>();
-     
+
         int x=0;
         int y=0;
-        
+
 
         if(id.equals(drones.get(0).nombre)){ //FLY1
             x=Math.max(max_x/2-20, 0);
+        }
+        /*}else if(id.equals(drones.get(2).nombre)){ //FLY2
+            x=Math.min(max_x/2+20, max_x-1);
+        }*/
 
-        }else if(id.equals(drones.get(2).nombre)){ //FLY2
-            x=Math.min(max_x/2+20, max_x);
-        }
-        
         else if(id.equals(drones.get(1).nombre)){ //RESCUE1
-            y = max_y/2;    
+            y = max_y/2;
         }
-        else if(id.equals(drones.get(3).nombre)){ //RESCUE2
-            x = max_x;
-            y = max_y/2;    
-        }
-        
+        /*else if(id.equals(drones.get(3).nombre)){ //RESCUE2
+            x = max_x-1;
+            y = max_y/2;
+        }*/
+
         getDronData(id).ini_x=x;
         getDronData(id).ini_y=y;
-        
+
         inicio.add(x);
-        inicio.add(y);  
-        
+        inicio.add(y);
+
         return inicio;
+    }
+//METODOS PARA LA GESTION DE MENSAJES
+
+    /**
+    * @author Celia, Monica
+    * Separa los mensajes en distintas colas segun su tipo
+    */
+    private void separarMensajes() throws InterruptedException{
+        ACLMessage inbox= queue.Pop();
+
+        String mensaje = inbox.getContent();
+        JsonObject m = Json.parse(mensaje).asObject();
+
+        if( inbox.getPerformative().equals(ACLMessage.QUERY_IF) ){
+            repostar.Push(inbox);
+        }
+        else if( m.get("objetivo-encontrado") != null ){
+            objetivos.Push(inbox);
+        }
+        else if ( m.get("result") != null  ){
+            datos.Push(inbox);
+        }
     }
 
 
@@ -529,7 +540,7 @@ public class AgenteBurocrata extends AgenteSimple {
     @Override
     public void execute(){
         ACLMessage inbox=null;
-        
+
         JsonObject mensaje;
         String map = seleccionarMapa();
         String a = JSONEncode_Inicial(map);
@@ -545,28 +556,77 @@ public class AgenteBurocrata extends AgenteSimple {
         }
         System.out.println("BUR: Inicializando drones");
          //Llamada a los drones
-        
+
         ArrayList<Integer> inicio;
         String m;
+        System.out.println("BUR: Datos: " + drones.get(1).toString());
         for(DronData dron : drones){
+            System.out.println("SKAKSKASKA");
             inicio = asignarInicio(dron.nombre);
+            System.out.println("SKAKSKASKA");
             m = JSONEncode_InicialDron(inicio.get(0), inicio.get(1));
             System.out.println("BUR: Codificando JSON");
             comunicar(dron.nombre, m, ACLMessage.INFORM, null);
         }
-       
-//PRAC3 -- DESCOMENTAR LUEGO        
-/*        while(validarRespuesta(mensaje)){
-            //Espera mensaje
-            escuchar();
+
+        while(validarRespuesta(inbox)){
+
+            while( queue.isEmpty() ) { // Iddle mientras no ha recibido nada. No bloqueante
+                sleep(1000); // Espera 1 segundo hasta siguiente chequeo
+            }
+            // En cuanto la cola tiene al menos un mensaje, se separa entre las distintas colas que tenemos
+            while(!queue.isEmpty()){
+                try {
+                    separarMensajes();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+            while( !repostar.isEmpty() || !objetivos.isEmpty() || !datos.isEmpty() ){
+                inbox = null;
+                if( !repostar.isEmpty() ){
+                    try {
+                        inbox = repostar.Pop();
+                        responderPeticionRepostaje(inbox.getSender().toString());
+                        System.out.println("Envia peticion el bicho " + inbox.getSender().toString());
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                if( !objetivos.isEmpty() ){
+                    try {
+                        inbox = objetivos.Pop();
+                        String coordenadasJSON = inbox.getContent();
+                        JsonObject c = Json.parse(coordenadasJSON).asObject();
+                        //MODIFICAR
+                        int x = c.get("x").asInt();
+                        int y = c.get("y").asInt();
+                        avisarObjetivoIdentificado(x,y);
+
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                if( !datos.isEmpty() ){
+                    try {
+                        inbox = datos.Pop();
+                        //Llamar al guardar drones actualizarDatos
+                        //actualizarDatos(inbox);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+
         }
-        if(!validarRespuesta(mensaje)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
+        /*if(!validarRespuesta(mensaje)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
             escuchar();
-        }
-*/      
+        }*/
+
         //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
         //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
-        
+
         //PRUBEA DE RESCATE
         for(int i = 0; i < 5; i++){
             JsonObject coords_objetivo = escuchar();
