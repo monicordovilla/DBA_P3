@@ -35,10 +35,28 @@ public abstract class AgenteSimple extends SuperAgent{
 
     /**
     *
-    * @author Kieran
+    * @author Kieran, Monica, Celia
     */
-    protected boolean validarRespuesta(JsonObject respuesta){
-        return true;
+    protected boolean validarRespuesta(ACLMessage respuesta){
+        if(respuesta.getPerformative().equals(ACLMessage.AGREE))
+            return false;
+        if(respuesta.getPerformative().equals(ACLMessage.INFORM))
+            return true;
+        else{
+            String mensaje = respuesta.getContent();
+            JsonObject m = Json.parse(mensaje).asObject();
+            System.out.println( "Falla el mensaje anterior por: " + m.get("details").asString() );
+            return false;
+        }
+    }
+    
+    protected boolean finalizadoExitorso(ACLMessage respuesta){
+        if(respuesta.getPerformative().equals(ACLMessage.AGREE)){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 
 //METODOS DE COMUNICACIÓN: Mandan mensajes al agente en el lado del servidor

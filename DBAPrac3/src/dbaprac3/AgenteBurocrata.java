@@ -38,6 +38,11 @@ public class AgenteBurocrata extends AgenteSimple {
     double fuelRestante;
     boolean mapaAlto=true;
 
+    int tamCola = 100;
+    MessageQueue datos = new MessageQueue(tamCola);
+    MessageQueue repostar = new MessageQueue(tamCola);
+    MessageQueue objetivos = new MessageQueue(tamCola);
+    
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
         this.drones = new ArrayList<>();
@@ -502,7 +507,29 @@ public class AgenteBurocrata extends AgenteSimple {
         
         return inicio;
     }
-
+//METODOS PARA LA GESTION DE MENSAJES
+    
+    /**
+    * @author Celia, Monica
+    * Separa los mensajes en distintas colas segun su tipo
+    */
+    private void separarMensajes() throws InterruptedException{
+        ACLMessage inbox= queue.Pop();
+        
+        String mensaje = inbox.getContent();
+        JsonObject m = Json.parse(mensaje).asObject();
+        
+        if( inbox.getPerformative().equals(ACLMessage.QUERY_IF) ){
+            repostar.Push(inbox);
+        }
+        else if( m.get("objetivo-encontrado") != null ){
+            objetivos.Push(inbox);
+        }
+        else if ( m.get("result") != null  ){
+            datos.Push(inbox);
+        }
+    }
+    
 
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
 
@@ -541,16 +568,62 @@ public class AgenteBurocrata extends AgenteSimple {
             System.out.println("BUR: Codificando JSON");
             comunicar(dron.nombre, m, ACLMessage.INFORM, null);
         }
-       
-//PRAC3 -- DESCOMENTAR LUEGO        
-/*        while(validarRespuesta(mensaje)){
-            //Espera mensaje
-            escuchar();
+            
+        while(validarRespuesta(inbox)){
+            
+            while( queue.isEmpty() ) { // Iddle mientras no ha recibido nada. No bloqueante
+                sleep(1000); // Espera 1 segundo hasta siguiente chequeo
+            }
+            // En cuanto la cola tiene al menos un mensaje, se separa entre las distintas colas que tenemos
+            while(!queue.isEmpty()){ 
+                try {
+                    separarMensajes();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            while( !repostar.isEmpty() || !objetivos.isEmpty() || !datos.isEmpty() ){
+                inbox = null;
+                if( !repostar.isEmpty() ){
+                    try {
+                        inbox = repostar.Pop();
+                        responderPeticionRepostaje(inbox.getSender().toString());
+                        System.out.println("Envia peticion el bicho " + inbox.getSender().toString());
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                if( !objetivos.isEmpty() ){
+                    try {
+                        inbox = objetivos.Pop();
+                        String coordenadasJSON = inbox.getContent();
+                        JsonObject c = Json.parse(coordenadasJSON).asObject();
+                        //MODIFICAR 
+                        int x = c.get("x").asInt();
+                        int y = c.get("y").asInt();
+                        avisarObjetivoIdentificado(x,y);
+                        
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                if( !datos.isEmpty() ){
+                    try {
+                        inbox = datos.Pop();
+                        //Llamar al guardar drones actualizarDatos
+                        //actualizarDatos(inbox);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+            
         }
-        if(!validarRespuesta(mensaje)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
+        /*if(!validarRespuesta(mensaje)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
             escuchar();
-        }
-*/      
+        }*/
+     
         //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
         //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
         
