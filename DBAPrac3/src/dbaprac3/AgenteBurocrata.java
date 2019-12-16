@@ -264,6 +264,8 @@ public class AgenteBurocrata extends AgenteSimple {
     /**
     *   
     * @author Mónica
+    * 
+    * MODIFICAR: DEVOLVER X E Y
     */
     protected boolean recibirObjetivoEncontrado(){
         JsonObject mensaje = escuchar();
@@ -318,28 +320,10 @@ public class AgenteBurocrata extends AgenteSimple {
     * @author Celia
     */  
     
-    private void actualizarDatos(String id){
+    private void actualizarDatos(ACLMessage inbox){
+        String id= inbox.getSender().toString();
         DronData  dron = getDronData(id);
         comunicar(id, "datos", ACLMessage.QUERY_REF, "datos");
-        
-        ACLMessage inbox = null;
-        try{
-            inbox = this.receiveACLMessage();
-        }
-        catch(Exception e){
-            System.out.println("Error de comunicación: Excepción al escuchar");
-        }
-        
-        while(!(inbox.getPerformative().equals("INFORM") && inbox.getConversationId().equals("datos") && inbox.getSender().equals(id))){
-            this.send(inbox);
-            
-            try{
-                sleep(20);
-                inbox = this.receiveACLMessage();
-            }catch(Exception e){
-                System.out.println("Error de comunicación: Excepción al escuchar");
-            }
-        }
         
         JsonObject mensaje = Json.parse(inbox.getContent()).asObject();
         
