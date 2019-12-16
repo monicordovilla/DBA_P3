@@ -30,7 +30,7 @@ public class DBAPrac3 {
         AgenteBurocrata Huph;
 
         try {
-            Huph = new AgenteBurocrata(new AgentID("GI_tIgnore01121"));
+            Huph = new AgenteBurocrata(new AgentID("GI_tIgnoreK03"));
         } catch (Exception ex) {
             System.err.println("already on the platform, goofy");
             return;

@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import com.eclipsesource.json.Json;
+import javafx.util.Pair;
 
 /**
  *
@@ -48,7 +49,7 @@ public class AgenteBurocrata extends AgenteSimple {
         this.drones = new ArrayList<>();
 
         System.out.println("BUR: Inicializando");
-        this.drones.add(new DronData("GI_Sparrow0l1", Rol.Sparrow));
+        this.drones.add(new DronData("GI_SparrowK01", Rol.Sparrow));
         //this.drones.add(new DronData("GI_Rescue0l1", Rol.Rescue));
 
         new AgenteSparrow(new AgentID(drones.get(0).nombre)).start();
@@ -477,33 +478,32 @@ public class AgenteBurocrata extends AgenteSimple {
     *
     */
 
-    ArrayList<Integer> asignarInicio(String id){
-        ArrayList<Integer> inicio = new ArrayList<>();
-
+    Pair<Integer,Integer> asignarInicio(int id){
         int x=0;
         int y=0;
 
-
-        if(id.equals(drones.get(0).nombre)){ //FLY1
+        if(id == 0){ //FLY1
             x=Math.max(max_x/2-20, 0);
         }
         /*}else if(id.equals(drones.get(2).nombre)){ //FLY2
             x=Math.min(max_x/2+20, max_x-1);
         }*/
-
-        else if(id.equals(drones.get(1).nombre)){ //RESCUE1
+        else if(id == 1){ //RESCUE1
             y = max_y/2;
         }
         /*else if(id.equals(drones.get(3).nombre)){ //RESCUE2
             x = max_x-1;
             y = max_y/2;
         }*/
+        else {
+            x = 0+id;
+        }
+        
+        System.out.println("ULTRASKAK");
+        drones.get(id).ini_x=x;
+        drones.get(id).ini_y=y;
 
-        getDronData(id).ini_x=x;
-        getDronData(id).ini_y=y;
-
-        inicio.add(x);
-        inicio.add(y);
+        Pair<Integer,Integer> inicio = new Pair<>(x,y);
 
         return inicio;
     }
@@ -557,19 +557,19 @@ public class AgenteBurocrata extends AgenteSimple {
         System.out.println("BUR: Inicializando drones");
          //Llamada a los drones
 
-        ArrayList<Integer> inicio;
+        Pair<Integer,Integer> inicio;
         String m;
-        System.out.println("BUR: Datos: " + drones.get(1).toString());
+        
+        int num_dron = 0;
         for(DronData dron : drones){
-            System.out.println("SKAKSKASKA");
-            inicio = asignarInicio(dron.nombre);
-            System.out.println("SKAKSKASKA");
-            m = JSONEncode_InicialDron(inicio.get(0), inicio.get(1));
+            inicio = asignarInicio(num_dron);
+            m = JSONEncode_InicialDron(inicio.getKey(), inicio.getValue());
             System.out.println("BUR: Codificando JSON");
             comunicar(dron.nombre, m, ACLMessage.INFORM, null);
+            num_dron++;
         }
 
-        while(validarRespuesta(inbox)){
+        while(num_dron != 0){
 
             while( queue.isEmpty() ) { // Iddle mientras no ha recibido nada. No bloqueante
                 sleep(1000); // Espera 1 segundo hasta siguiente chequeo
@@ -656,7 +656,7 @@ public class AgenteBurocrata extends AgenteSimple {
     @Override
     public void finalize() { //Opcional
         System.out.println("\nFinalizando burocrata");
-//        comunicar("Izar", "", ACLMessage.CANCEL, clave);
+        comunicar("Izar", "", ACLMessage.CANCEL, clave);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
 }
