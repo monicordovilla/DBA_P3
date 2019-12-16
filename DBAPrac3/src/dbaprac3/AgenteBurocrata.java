@@ -43,8 +43,8 @@ public class AgenteBurocrata extends AgenteSimple {
         this.drones = new ArrayList<>();
 
         System.out.println("BUR: Inicializando");
-        this.drones.add(new DronData("GI_Fly01", Rol.Fly));
-        this.drones.add(new DronData("GI_Rescue01", Rol.Rescue));
+        this.drones.add(new DronData("GI_Flysss01", Rol.Fly));
+        this.drones.add(new DronData("GI_Rescuesss01", Rol.Rescue));
         
         new AgenteFly(new AgentID(drones.get(0).nombre)).start();
         new AgenteRescate(new AgentID(drones.get(1).nombre)).start();
@@ -481,18 +481,18 @@ public class AgenteBurocrata extends AgenteSimple {
 
         if(id.equals(drones.get(0).nombre)){ //FLY1
             x=Math.max(max_x/2-20, 0);
-
-        }else if(id.equals(drones.get(2).nombre)){ //FLY2
-            x=Math.min(max_x/2+20, max_x);
         }
+        /*}else if(id.equals(drones.get(2).nombre)){ //FLY2
+            x=Math.min(max_x/2+20, max_x-1);
+        }*/
         
         else if(id.equals(drones.get(1).nombre)){ //RESCUE1
             y = max_y/2;    
         }
-        else if(id.equals(drones.get(3).nombre)){ //RESCUE2
-            x = max_x;
+        /*else if(id.equals(drones.get(3).nombre)){ //RESCUE2
+            x = max_x-1;
             y = max_y/2;    
-        }
+        }*/
         
         getDronData(id).ini_x=x;
         getDronData(id).ini_y=y;
@@ -532,8 +532,11 @@ public class AgenteBurocrata extends AgenteSimple {
         
         ArrayList<Integer> inicio;
         String m;
+        System.out.println("BUR: Datos: " + drones.get(1).toString());
         for(DronData dron : drones){
+            System.out.println("SKAKSKASKA");
             inicio = asignarInicio(dron.nombre);
+            System.out.println("SKAKSKASKA");
             m = JSONEncode_InicialDron(inicio.get(0), inicio.get(1));
             System.out.println("BUR: Codificando JSON");
             comunicar(dron.nombre, m, ACLMessage.INFORM, null);
