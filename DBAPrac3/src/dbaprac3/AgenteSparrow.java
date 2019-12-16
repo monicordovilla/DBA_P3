@@ -29,7 +29,7 @@ public class AgenteSparrow extends AgenteDron {
     int alemanes_debug = 0; //BORRAR LUEGO, el numero de alemanes que ha visto
     boolean[][] mapaMemoria;
     boolean objetivo;
-    Pair<Integer,Integer> coords_obj;
+    Pair<Integer,Integer> coords_dest;
     boolean busquedaCompletada;
     boolean mapaMemoria_init;
 
@@ -50,7 +50,7 @@ public class AgenteSparrow extends AgenteDron {
         objetivo = false;
         busquedaCompletada = false;
         mapaMemoria_init = false;
-        coords_obj = null;
+        coords_dest = null;
     }
     
     /**
@@ -125,18 +125,18 @@ public class AgenteSparrow extends AgenteDron {
       
       actualizarMapa();
       
-      if(coords_act.getKey() == gps.x && coords_act.getValue() == gps.y) { objetivo = false; }
+      if(coords_dest != null && coords_dest.getKey() == gps.x && coords_dest.getValue() == gps.y) { objetivo = false; }
       
       if(!busquedaCompletada) {
         if(!objetivo) {
             System.out.println("DRON-S: Buscando Objetivo");
-            coords_obj = busquedaAnchura(coords_act);
-            if(coords_obj == null) { busquedaCompletada = true; }
+            coords_dest = busquedaAnchura(coords_act);
+            if(coords_dest == null) { busquedaCompletada = true; }
             else { objetivo = true; }
-            System.out.println("DRON-S: Coords: " + coords_obj);
+            System.out.println("DRON-S: Coords: " + coords_dest);
         }
         
-        accion = checkDirObjetivo(coords_obj);
+        accion = checkDirObjetivo(coords_dest);
         accion = busquedaMapasAltos(accion);
         accion = checkNavegacionNormal(accion);
         accion = checkManoDerecha(accion);
@@ -157,23 +157,65 @@ public class AgenteSparrow extends AgenteDron {
       int x = coords_act.getKey();
       int y = coords_act.getValue();
       
+      int tasa_aceptabilidad = tamanio_radar*(centro_radar-2);
+      int tam_barrido_maximo = Integer.MAX_VALUE;
+      
+      Pair<Integer,Integer> mejor_pair = null;
+      Pair<Integer,Integer> aux_pair;
+      int mejor_int = Integer.MAX_VALUE;
+      int aux_int;
+      
       while(x+tam_barrido < max_x || y + tam_barrido < max_y || x-tam_barrido >= 0 || y-tam_barrido >= 0){ //Mientras la cola no este vacia y no tengmaos objetivo
           for(int i = -tam_barrido; i <= tam_barrido; i++){
               for(int j = -tam_barrido; j <= tam_barrido; j++) {
                   if (Math.abs(i) == tam_barrido || Math.abs(j) == tam_barrido){
-                    if( enLimites(x+i,y+j) && !mapaMemoria[x+i][y+j]) {return new Pair<Integer, Integer>(x+i,y+j); }
+                    
+                    //Si no esta en el mapa de memoria, buscamos el mejor que tenga suficientes a false para estar en la tasa de aceptabildad, si no buscamos otro
+                    if( enLimites(x+i,y+j) && !mapaMemoria[x+i][y+j] ) {
+                        aux_pair = new Pair<Integer, Integer>(x+i,y+j);
+                        aux_int = busquedaAnchura_truesEnVision(aux_pair);
+                        if (mejor_pair == null || mejor_int > aux_int ) { mejor_pair = aux_pair; mejor_int = aux_int; }
+                        
+                        if(aux_int > tasa_aceptabilidad && tam_barrido_maximo == Integer.MAX_VALUE){ //Para que no se quede en bucle donde varios son el mejor
+                            tam_barrido_maximo  = tam_barrido + centro_radar;
+                        }
+                        else{ return mejor_pair; }
+                    
+                    
+                    }
                   }
               }
           }
           
           tam_barrido++;
-          
+          if(tam_barrido > tam_barrido_maximo) { return mejor_pair; }
       }
       
       return null;
       
     }
     
+    /**
+    *
+    * @author Kieran
+    */
+    protected int busquedaAnchura_truesEnVision(Pair<Integer,Integer> coords_act) {
+        int i, j;
+        int x = coords_act.getKey();
+        int y = coords_act.getValue();
+        int trues = 0;
+                 
+        for(i=0; i < tamanio_radar; i++) {
+            for(j=0; j < tamanio_radar; j++) {
+                int x2 = x-(j-centro_radar);
+                int y2 = y-(i-centro_radar);
+//                System.out.println(x + " " + y + " enl " + enLimites(x,y));
+                if(enLimites(x2,y2) && mapaMemoria[x2][y2])
+                    trues++;
+            }
+        }
+        return trues;
+    }
     
     /**
     *

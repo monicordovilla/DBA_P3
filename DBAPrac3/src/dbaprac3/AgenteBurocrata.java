@@ -49,7 +49,7 @@ public class AgenteBurocrata extends AgenteSimple {
         this.drones = new ArrayList<>();
 
         System.out.println("BUR: Inicializando");
-        this.drones.add(new DronData("GI_SparrowK01", Rol.Sparrow));
+        this.drones.add(new DronData("GI_SparrowK04", Rol.Sparrow));
         //this.drones.add(new DronData("GI_Rescue0l1", Rol.Rescue));
 
         new AgenteSparrow(new AgentID(drones.get(0).nombre)).start();
