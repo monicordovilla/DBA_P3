@@ -266,7 +266,7 @@ public class AgenteSparrow extends AgenteDron {
         BufferedImage imagen = new BufferedImage(max_x, max_y, BufferedImage.TYPE_INT_RGB);
         for(int i = 0; i < max_x; i++){
             for(int j = 0; j < max_y; j++){
-                imagen.setRGB(i, j, (mapaMemoria[i][j]) ? 0xffffff : 0x00000 );
+                imagen.setRGB(i, j, (mapaMemoria[i][j]) ? ((mapa[i][j] > max_z) ? 0x000080 : 0xffffff) : 0x00000 );
             }
         }
         
