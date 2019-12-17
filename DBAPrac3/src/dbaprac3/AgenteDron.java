@@ -401,7 +401,7 @@ public abstract class AgenteDron extends AgenteSimple{
     * Decodifica el primer mensaje del burocrata
     * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
     */
-    private void JSONDecode_Inicial(JsonObject mensaje){
+    protected void JSONDecode_Inicial(JsonObject mensaje){
         System.out.println("a");
         session = mensaje.get("session").asString();
         max_x = mensaje.get("dimx").asInt();

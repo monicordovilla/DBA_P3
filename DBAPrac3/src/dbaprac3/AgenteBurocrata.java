@@ -34,7 +34,7 @@ public class AgenteBurocrata extends AgenteSimple {
     JsonArray mapa_recibido; //El objeto recibido por el JSON inicial que describe la imagen png del mapa
     String clave;
     String session;
-    
+
     ArrayList<DronData> drones;
     double fuelRestante;
     boolean mapaAlto=true;
@@ -43,17 +43,17 @@ public class AgenteBurocrata extends AgenteSimple {
     MessageQueue datos = new MessageQueue(tamCola);
     MessageQueue repostar = new MessageQueue(tamCola);
     MessageQueue objetivos = new MessageQueue(tamCola);
-    
+
     public AgenteBurocrata(AgentID aid)throws Exception{
         super(aid);
         this.drones = new ArrayList<>();
 
         System.out.println("BUR: Inicializando");
-        this.drones.add(new DronData("GI_Fly01", Rol.Fly));
-        this.drones.add(new DronData("GI_Rescue01", Rol.Rescue));
-        
-        new AgenteFly(new AgentID(drones.get(0).nombre)).start();
-        new AgenteRescate(new AgentID(drones.get(1).nombre)).start();
+        this.drones.add(new DronData("GI_SparrowK04", Rol.Sparrow));
+        //this.drones.add(new DronData("GI_Rescue0l1", Rol.Rescue));
+
+        new AgenteSparrow(new AgentID(drones.get(0).nombre)).start();
+        //new AgenteRescate(new AgentID(drones.get(1).nombre)).start();
 
         System.out.println("BUR: Inicializado drones");
     }
@@ -177,7 +177,7 @@ public class AgenteBurocrata extends AgenteSimple {
         String mensaje = a.toString();
         return mensaje;
     }
-    
+
 
     /**
     * NUEVO AÑADIR ANA A DIAGRAMA
@@ -220,24 +220,24 @@ public class AgenteBurocrata extends AgenteSimple {
         mensaje.add("objetivo-encontrado", true);
 
     }
-    
+
     /**
-    *   
+    *
     * @author Mónica
-    * 
+    *
     * MODIFICAR: DEVOLVER X E Y
     */
     protected Pair<Integer,Integer> recibirObjetivoEncontrado(ACLMessage inbox){
         String coordenadasJSON = inbox.getContent();
         JsonObject c = Json.parse(coordenadasJSON).asObject();
-        //MODIFICAR 
+        //MODIFICAR
         int x = c.get("coordenadas").asObject().get("x").asInt();
         int y = c.get("coordenadas").asObject().get("y").asInt();
-        
+
         Pair<Integer,Integer> coords_obj = new Pair<>(x, y);
         return coords_obj;
     }
-    
+
     /**
     *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
     * @author Mónica
@@ -245,7 +245,7 @@ public class AgenteBurocrata extends AgenteSimple {
     protected void avisarObjetivoIdentificado(int x, int y){
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-identificado", true);
-        
+
         JsonObject coordenadas =  new JsonObject();
         coordenadas.add("x", x);
         coordenadas.add("y", y);
@@ -258,7 +258,7 @@ public class AgenteBurocrata extends AgenteSimple {
     }
 
     /**
-    * 
+    *
     * @author Mónica
     * al final no se usa
     */
@@ -267,12 +267,12 @@ public class AgenteBurocrata extends AgenteSimple {
         mensaje.add("objetivos-encontrados", true);
     }
 
-    
+
     /**
     *
     * @author Mónica
     */
-    protected void responderPeticionRepostaje(String dron){ //PRACT3 -- cambiar a string 
+    protected void responderPeticionRepostaje(String dron){ //PRACT3 -- cambiar a string
         if (puedeRepostar(dron)){
             comunicar(dron, "ACEPTADO", ACLMessage.CONFIRM, clave);
         }
@@ -280,8 +280,8 @@ public class AgenteBurocrata extends AgenteSimple {
             comunicar(dron, "DENEGADO", ACLMessage.DISCONFIRM, clave);
         }
     }
-    
-    
+
+
     /**
     *
     * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
@@ -289,46 +289,46 @@ public class AgenteBurocrata extends AgenteSimple {
     * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
     * "direction": accion}, ...] }}:CONVERSATION-ID@
     * @author Celia, Monica
-    */  
+    */
     private void actualizarDatos(ACLMessage inbox){
         String id= inbox.getSender().toString();
         DronData  dron = getDronData(id);
         comunicar(id, "datos", ACLMessage.QUERY_REF, "datos");
-        
+
         JsonObject mensaje = Json.parse(inbox.getContent()).asObject();
-        
+
         dron.gps.x = mensaje.get("gps").asObject().get("x").asInt();
         dron.gps.y = mensaje.get("gps").asObject().get("y").asInt();
         dron.gps.z = mensaje.get("gps").asObject().get("z").asInt();
-        
+
         //Extraer el valor del combustible
         dron.fuel = mensaje.get("fuel").asFloat();
-        
+
         String estado = mensaje.get("status").asString();
-        
+
         switch (estado){
             case "EXPLORACION": dron.status = Estado.EXPLORACION; break;
             case "BUSQUEDA": dron.status = Estado.BUSQUEDA; break;
             case "REPOSO": dron.status = Estado.REPOSO; break;
             case "REPOSTAJE": dron.status = Estado.REPOSTAJE; break;
-        } 
-        
+        }
+
         dron.consumo_fuel = mensaje.get("consumo_fuel").asFloat();
-        
+
         //al no haber liguilla ya no hace falta guardar awacs
         //no veo necesario que el burocrata tenga el gonio y el infrared de cada dron
     }
-    
-    
+
+
     DronData getDronData(String id){
         for(DronData d : drones){
             if(d.nombre.equals(id))
                 return d;
         }
-        
+
         return null;
     }
-    
+
     //METODOS DE CONTROL
 
 
@@ -339,14 +339,14 @@ public class AgenteBurocrata extends AgenteSimple {
     boolean puedeRepostar(String nombre){ //PRACT3 -- cambiar a string
         ArrayList<DronData> volver =new ArrayList<>();
         DronData dron = getDronData(nombre);
-       
-        
+
+
         if(dron==null)
             return false;
 
         //actualizarDatos(nombre);
         volver.add(dron);
-                
+
         if(dron.rol==Rol.Rescue){
             for(DronData d : drones)
                 if(d.rol==Rol.Rescue && d.recogidos>dron.recogidos){
@@ -365,7 +365,7 @@ public class AgenteBurocrata extends AgenteSimple {
              for(DronData d : drones)
                  if(d.rol==Rol.Rescue || d.rol==Rol.Fly){
                     //actualizarDatos(d.nombre);
-                    volver.add(d);    
+                    volver.add(d);
                  }
         }
         else
@@ -377,7 +377,7 @@ public class AgenteBurocrata extends AgenteSimple {
 
         return puedenVolver(volver);
     }
-    
+
     /**
     *
     * @author Celia
@@ -387,7 +387,7 @@ public class AgenteBurocrata extends AgenteSimple {
     *    con el fuel general (que tiene y que puede repostar)
     *    d1 -> dronRescue  d2 -> dronRescue2   d3 -> dronFly   d4 -> dronAux
     */
-    
+
     boolean puedenVolver(ArrayList<DronData> drones){
         int pasos=0;
         double fuelNecesario=0;
@@ -409,7 +409,7 @@ public class AgenteBurocrata extends AgenteSimple {
         }
         return true;
     }
-    
+
     /**
     *
     * @author Celia
@@ -434,7 +434,7 @@ public class AgenteBurocrata extends AgenteSimple {
         DronData dron = null;
         int pasosMin = Integer.MAX_VALUE;
         int pasos;
-        
+
         for(DronData d : drones){
             if(d.rol==Rol.Rescue){
                 //actualizarDatos(d.nombre);
@@ -445,57 +445,56 @@ public class AgenteBurocrata extends AgenteSimple {
                 }
             }
         }
-        
+
         return dron.nombre;
     }
-    
+
     /**
     * @author Celia
     *
     */
-    
-    ArrayList<Integer> asignarInicio(String id){
-        ArrayList<Integer> inicio = new ArrayList<>();
-     
+
+    Pair<Integer,Integer> asignarInicio(int id){
         int x=0;
         int y=0;
-        
 
-        if(id.equals(drones.get(0).nombre)){ //FLY1
+        if(id == 0){ //FLY1
             x=Math.max(max_x/2-20, 0);
+        }
+        /*}else if(id.equals(drones.get(2).nombre)){ //FLY2
+            x=Math.min(max_x/2+20, max_x-1);
+        }*/
+        else if(id == 1){ //RESCUE1
+            y = max_y/2;
+        }
+        /*else if(id.equals(drones.get(3).nombre)){ //RESCUE2
+            x = max_x-1;
+            y = max_y/2;
+        }*/
+        else {
+            x = 0+id;
+        }
 
-        }else if(id.equals(drones.get(2).nombre)){ //FLY2
-            x=Math.min(max_x/2+20, max_x);
-        }
-        
-        else if(id.equals(drones.get(1).nombre)){ //RESCUE1
-            y = max_y/2;    
-        }
-        else if(id.equals(drones.get(3).nombre)){ //RESCUE2
-            x = max_x;
-            y = max_y/2;    
-        }
-        
-        getDronData(id).ini_x=x;
-        getDronData(id).ini_y=y;
-        
-        inicio.add(x);
-        inicio.add(y);  
-        
+        System.out.println("ULTRASKAK");
+        drones.get(id).ini_x=x;
+        drones.get(id).ini_y=y;
+
+        Pair<Integer,Integer> inicio = new Pair<>(x,y);
+
         return inicio;
     }
 //METODOS PARA LA GESTION DE MENSAJES
-    
+
     /**
     * @author Celia, Monica
     * Separa los mensajes en distintas colas segun su tipo
     */
     private void separarMensajes() throws InterruptedException{
         ACLMessage inbox= queue.Pop();
-        
+
         String mensaje = inbox.getContent();
         JsonObject m = Json.parse(mensaje).asObject();
-        
+
         if( inbox.getPerformative().equals(ACLMessage.QUERY_IF) ){
             repostar.Push(inbox);
         }
@@ -506,7 +505,7 @@ public class AgenteBurocrata extends AgenteSimple {
             datos.Push(inbox);
         }
     }
-    
+
 
 //METODOS DE SUPERAGENT: Métodos sobreescritos y heredados de la clase SuperAgent
 
@@ -517,7 +516,7 @@ public class AgenteBurocrata extends AgenteSimple {
     @Override
     public void execute(){
         ACLMessage inbox=null;
-        
+
         JsonObject mensaje;
         String map = seleccionarMapa();
         String a = JSONEncode_Inicial(map);
@@ -533,30 +532,33 @@ public class AgenteBurocrata extends AgenteSimple {
         }
         System.out.println("BUR: Inicializando drones");
          //Llamada a los drones
-        
-        ArrayList<Integer> inicio;
+
+        Pair<Integer,Integer> inicio;
         String m;
+
+        int num_dron = 0;
         for(DronData dron : drones){
-            inicio = asignarInicio(dron.nombre);
-            m = JSONEncode_InicialDron(inicio.get(0), inicio.get(1));
+            inicio = asignarInicio(num_dron);
+            m = JSONEncode_InicialDron(inicio.getKey(), inicio.getValue());
             System.out.println("BUR: Codificando JSON");
             comunicar(dron.nombre, m, ACLMessage.INFORM, null);
+            num_dron++;
         }
-            
-        while(validarRespuesta(inbox)){
-            
+
+        while(num_dron != 0){
+
             while( queue.isEmpty() ) { // Iddle mientras no ha recibido nada. No bloqueante
                 sleep(1000); // Espera 1 segundo hasta siguiente chequeo
             }
             // En cuanto la cola tiene al menos un mensaje, se separa entre las distintas colas que tenemos
-            while(!queue.isEmpty()){ 
+            while(!queue.isEmpty()){
                 try {
                     separarMensajes();
                 } catch (InterruptedException ex) {
                     Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            
+
             while( !repostar.isEmpty() || !objetivos.isEmpty() || !datos.isEmpty() ){
                 inbox = null;
                 if( !repostar.isEmpty() ){
@@ -570,10 +572,10 @@ public class AgenteBurocrata extends AgenteSimple {
                 }
                 if( !objetivos.isEmpty() ){
                     try {
-                        inbox = objetivos.Pop();                        
+                        inbox = objetivos.Pop();
                         Pair<Integer,Integer> coordenadas_objetivo = recibirObjetivoEncontrado(inbox);
                         avisarObjetivoIdentificado(coordenadas_objetivo.getKey(), coordenadas_objetivo.getValue());
-                        
+
                     } catch (InterruptedException ex) {
                         Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -588,15 +590,15 @@ public class AgenteBurocrata extends AgenteSimple {
                     }
                 }
             }
-            
+
         }
         /*if(!finalizadoExitoso()) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
             //crear traza
         }*/
-     
+
         //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
         //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
-        
+
         //PRUBEA DE RESCATE
         for(int i = 0; i < 5; i++){
             JsonObject coords_objetivo = escuchar();
@@ -626,7 +628,7 @@ public class AgenteBurocrata extends AgenteSimple {
     @Override
     public void finalize() { //Opcional
         System.out.println("\nFinalizando burocrata");
-//        comunicar("Izar", "", ACLMessage.CANCEL, clave);
+        comunicar("Izar", "", ACLMessage.CANCEL, clave);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
 }

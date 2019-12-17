@@ -127,22 +127,4 @@ public class AgenteFly extends AgenteDron {
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }
     
-    
-    /**
-    *
-    * @author Ana
-    * Estrategia de búsqueda para mapas bajos en los que el equipo esta formado por 1 Fly, 1 Hawk y 2 Rescue
-    */
-    /*public void estrategiaMapasBajos(){//Variable que tenemos que ver donde recoje su valor)
-        //if encuentra busqueda directa
-    }
-    
-    /**
-    *
-    * @author Ana
-    * Se conoce donde esta el objetivo y se dirige directamente hacia el
-    */
-    /*public void eobjetivoDirecto(){//Variable que tenemos que ver donde recoje su valor)
-        //if encuentra busqueda directa
-    }*/
 }
