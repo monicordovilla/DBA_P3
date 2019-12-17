@@ -49,15 +49,15 @@ public class AgenteBurocrata extends AgenteSimple {
         this.drones = new ArrayList<>();
 
         System.out.println("BUR: Inicializando");
-        this.drones.add(new DronData("GI_FlyK01", Rol.Fly));
-        this.drones.add(new DronData("GI_SparrowK02", Rol.Sparrow));
-        this.drones.add(new DronData("GI_SparrowK03", Rol.Sparrow));
-        this.drones.add(new DronData("GI_RescueK04", Rol.Rescue));
+        this.drones.add(new DronData("GI_FlyK001", Rol.Fly));
+        this.drones.add(new DronData("GI_SparrowK002", Rol.Sparrow));
+        this.drones.add(new DronData("GI_SparrowK003", Rol.Sparrow));
+        this.drones.add(new DronData("GI_RescueK004", Rol.Rescue));
 
-        //new AgenteFly(new AgentID(drones.get(0).nombre)).start();
+        new AgenteFly(new AgentID(drones.get(0).nombre)).start();
         new AgenteSparrow(new AgentID(drones.get(1).nombre)).start();
         new AgenteSparrow(new AgentID(drones.get(2).nombre)).start();
-        //new AgenteRescate(new AgentID(drones.get(3).nombre)).start();
+        new AgenteRescate(new AgentID(drones.get(3).nombre)).start();
 
         System.out.println("BUR: Inicializado drones");
     }
@@ -161,7 +161,7 @@ public class AgenteBurocrata extends AgenteSimple {
     * Codifica el primer mesaje que se le va a enviar al dron
     * INFORM{"result":"<OK>", "session":"<master>", "dimx":<w>, "dimy":<h>, "map":[...], "x":<int>, "y":<int>, "estado":"<s>"}
     */
-    private String JSONEncode_InicialDron(int x, int y){
+    private String JSONEncode_InicialDron(int x, int y, int fin_x){
         JsonObject a = new JsonObject();
 
         a.add("result", "OK");
@@ -174,8 +174,11 @@ public class AgenteBurocrata extends AgenteSimple {
         map = JSON_Mapa();
         a.add("map",map);
 
-        a.add("x", x); //PRAC3 -- CAMBIAR DESPUES
-        a.add("y", y); //PRAC3 -- CAMBIAR DESPUES
+        if(fin_x < 0 || fin_x >= max_x) { fin_x = max_x-1; }
+        
+        a.add("x", x);
+        a.add("y", y);
+        a.add("fin_x", fin_x);
         a.add("estado", "EXPLORACION" );
 
         String mensaje = a.toString();
@@ -478,33 +481,28 @@ public class AgenteBurocrata extends AgenteSimple {
     *
     */
 
-    Pair<Integer,Integer> asignarInicio(int id){
+    void asignarInicio(int id){
         int x=0;
         int y=0;
+        int fx = max_x-1;
 
-        /*if(id == 0){ //FLY1
-            x=Math.max(max_x/2-20, 0);
-        }
-        else if(id == 2){ //FLY2
-            x=Math.min(max_x/2+20, max_x-1);
-        }
-        else if(id == 1){ //RESCUE1
-            y = max_y/2;
-        }
-        else if(id == 3){ //RESCUE2
+        DronData dron = drones.get(id);
+        
+        if(dron.rol == Rol.Fly){
             x = max_x-1;
             y = max_y/2;
+            fx = (id+1)*max_x/3;
+        }        
+        else if(dron.rol == Rol.Sparrow){
+            x = 0; fx = max_x/2;
+            if(id == 1) { x = max_x/2; fx = max_x-1; }
         }
-        else {*/
-            x = 0+id*5;
-        //}
+        else{
+            x = max_x/2;
+            y = max_y/2;
+        }
 
-        drones.get(id).ini_x=x;
-        drones.get(id).ini_y=y;
-
-        Pair<Integer,Integer> inicio = new Pair<>(x,y);
-
-        return inicio;
+        dron.ini_x = x; dron.ini_y = y; dron.fin_x = fx;
     }
 //METODOS PARA LA GESTION DE MENSAJES
 
@@ -561,8 +559,8 @@ public class AgenteBurocrata extends AgenteSimple {
 
         int num_dron = 0;
         for(DronData dron : drones){
-            inicio = asignarInicio(num_dron);
-            m = JSONEncode_InicialDron(inicio.getKey(), inicio.getValue());
+            asignarInicio(num_dron);
+            m = JSONEncode_InicialDron(dron.ini_x, dron.ini_y, dron.fin_x);
             System.out.println("BUR: Codificando JSON");
             comunicar(dron.nombre, m, ACLMessage.INFORM, null);
             num_dron++;

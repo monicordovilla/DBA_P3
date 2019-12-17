@@ -99,7 +99,7 @@ public class AgenteRescate extends AgenteDron {
             else {
                 if(torescue == 0) { return stop; }
                 objetivos.poll();
-                System.out.println("DRON-R: Rescatando. Cola: " + objetivos);  
+                System.out.println("DRON-R: Rescatando. Cola: " + objetivos +". Obj actual: " + obj_x + " " + obj_y);  
                 obj_x = -1; obj_y = -1;
                 return rescue;
             }
@@ -140,7 +140,8 @@ public class AgenteRescate extends AgenteDron {
     */
     @Override
     protected void bucleExecute(){
-        if(torescue == 0) {
+        if(torescue == 0 && estado != Estado.REPOSO) { //No acabar si estamos en la posicion inicial
+            System.out.println("RRRRRRRRRR");
             obj_x = ini_x;
             obj_y = ini_y;
         }
@@ -152,6 +153,7 @@ public class AgenteRescate extends AgenteDron {
             obj_x = objetivos.peek().getKey();
             obj_y = objetivos.peek().getValue();
         }
+        estado = Estado.BUSQUEDA;
         ignorar_msg_objetivos = true; //Hace falta filtrar los mensajes de que ha llegado un nuevo objetivo durante esta parte
         super.bucleExecute();
     }

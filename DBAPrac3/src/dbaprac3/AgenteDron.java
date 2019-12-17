@@ -389,6 +389,18 @@ public abstract class AgenteDron extends AgenteSimple{
       }
       return accion;
     }
+    
+    /**
+    *
+    * @author Kieran
+    */    
+    protected Accion checkDirObjetivo(Pair<Integer,Integer> obj){
+        double angulo_falsogonio = Math.atan2(-(gps.x-obj.getKey()), gps.y-obj.getValue()) * 180/Math.PI;
+        if (angulo_falsogonio < 0) { angulo_falsogonio = 360 + angulo_falsogonio; }
+        gonio.angulo = (float) angulo_falsogonio;
+        gonio.distancia = 5;
+        return siguienteDireccion(true);
+    }
 
 //METODOS DE COMUNICACIÓN: Mandan mensajes al agente en el lado del servidor.
 //  +
@@ -781,7 +793,6 @@ public abstract class AgenteDron extends AgenteSimple{
 
     @Override
     public void finalize() { //Opcional
-        comunicar("Izar", "", ACLMessage.CANCEL, clave);
         System.out.println("\nFinalizando" + rol);
         super.finalize(); //Pero si se incluye, esto es obligatorio
     }

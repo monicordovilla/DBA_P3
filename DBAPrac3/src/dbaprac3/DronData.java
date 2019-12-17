@@ -28,6 +28,7 @@ class DronData {
     double consumo_fuel; //Consumo de fuel por movimiento
     int ini_x;
     int ini_y;
+    int fin_x;
     Rol rol;
     int recogidos;
     Estado status;
