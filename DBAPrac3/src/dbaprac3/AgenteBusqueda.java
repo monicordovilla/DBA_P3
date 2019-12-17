@@ -6,6 +6,7 @@
 package dbaprac3;
 
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import static dbaprac3.Accion.*;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
@@ -22,17 +23,98 @@ public class AgenteBusqueda extends AgenteDron {
     int alemanes_debug = 0; //BORRAR LUEGO, el numero de alemanes que ha visto
     int max_z_sparrow = 240;
     Estrategia plan;
+    
+    int fin_x = 0;
+    
+    //Estrategia BARRIDO_SIMPLE
+    boolean dir_norte; //Cambiar luego
+    boolean dir_oeste; //Cambiar luego
+   
+    //Estrategia ANCHURA_ALTO y ANCHURA_BAJO
     boolean[][] mapaMemoria;
     boolean objetivo;
     Pair<Integer,Integer> coords_dest;
     boolean busquedaCompletada;
-    boolean mapaMemoria_init;;
+    boolean mapaMemoria_init;
     
     public AgenteBusqueda(AgentID aid) throws Exception{
         super(aid);
         infrarojo = new ArrayList<>();
     }
+    
+        /**
+    *
+    * @author Ana, Kieran
+    * Método sobreescrito de la clase padre para adaptarlo al Sparrow
+    */
+    @Override
+    protected Accion comprobarAccion(){
+        Accion accion = null;
+        
+        if (plan == Estrategia.BARRIDO_SIMPLE) { accion = (dir_norte) ? moveN : moveS; }
 
+        if (plan == Estrategia.ANCHURA_ALTO || plan == Estrategia.ANCHURA_BAJO) {
+            accion = preparacionBusqueda();
+        }
+        
+        accion = scanInfrarojos(accion);
+            if (plan == Estrategia.BARRIDO_SIMPLE && accion == moveUP) { try{ barridoEnBorde(accion); } catch(Exception e){ e.printStackTrace(); } }
+        accion = checkNavegacionNormal(accion);
+            if(max_z < 255) { accion = checkManoDerecha(accion); }
+        accion = checkRepostaje(accion);
+          
+      return accion;
+        
+    }
+
+    protected Accion preparacionBusqueda() {
+        actualizarMapaMemoria();
+            
+        if(coords_dest != null && coords_dest.getKey() == gps.x && coords_dest.getValue() == gps.y) { objetivo = false; }
+
+        if(!busquedaCompletada) {
+            if(!objetivo) {
+                System.out.println("DRON-" + rol + ": Buscando Objetivo");
+                coords_dest = busquedaAnchura(new Pair<Integer,Integer>(gps.x,gps.y));
+                if(coords_dest == null) { busquedaCompletada = true; }
+                else { objetivo = true; }
+                System.out.println("DRON-" + rol + ": Coords: " + coords_dest);
+            }
+
+            return checkDirObjetivo(coords_dest);
+            }
+        return null;
+    }
+    
+       /**
+    *
+    * @author Ana, Kieran
+    * Estrategia de búsqueda para mapas altos en los que el equipo esta formado por 2 Fly y 2 Rescue
+    */
+    protected Accion barridoEnBorde(Accion accion){ //Cuando creemos las instancias debemos establecerle un identificador para que aqui segn eso recorra una parte del mapa
+        
+        //Mover a la izda/dcha si se ha llegado al limite del mapa
+        if((gps.y == min_y && dir_norte) || (gps.y == max_y-1 && !dir_norte)) { //Vemos si hemos llegado a la parte superior o inferior del mapa
+            if((dir_oeste && gps.x == min_x) || (!dir_oeste && gps.x == max_x-1)) { //Vemos si estamos en el borde lateral, si estamos paramos y bajamos
+                pasos_desplazamiento = 0;
+            }
+            
+            if(pasos_desplazamiento > 0) {
+                Accion dir = (dir_oeste) ? moveW : moveE; //Movemos al este u oeste segun corresponda
+                accion = dir;
+                pasos_desplazamiento--;
+            }
+            else { //Cambio de sentido vertical, ya que hemos cubierto todod el radar
+                pasos_desplazamiento = tamanio_radar;
+                dir_norte = !dir_norte;
+                accion = (dir_norte) ? moveN : moveS;
+            }
+        }
+                   
+        return accion;
+                
+    }
+    
     /**
     *
     * @author Ana, Kieran
@@ -73,18 +155,28 @@ public class AgenteBusqueda extends AgenteDron {
     
         /**
     *
-    * @author Ana
+    * @author Ana, Kieran
     * Mapa de memoria inicial
     */
-    protected void inicializarMapa(){
+    protected void inicializarMapaMemoria(){
         int i, j;
+        
+        int aux_i = (plan == Estrategia.ANCHURA_ALTO) ? 0 : ini_x;
+        int aux_f = (plan == Estrategia.ANCHURA_ALTO) ? max_x-1 : fin_x;
         
         mapaMemoria = new boolean[max_x][max_y];
         for( i=0; i<max_x; i++) {
             for( j=0; j<max_y; j++) {
-                mapaMemoria[i][j] = mapa[i][j] > max_z;
+                if(i < aux_i || i > aux_f) { mapaMemoria[i][j] = true; continue; }
+                if(plan == Estrategia.ANCHURA_BAJO) {
+                    mapaMemoria[i][j] = mapa[i][j] > max_z;
+                }
+                else {
+                    mapaMemoria[i][j] = mapa[i][j] <= max_z_sparrow;
+                }
             }
         }
+        
         mapaMemoria_init = true;
     }
     
@@ -93,7 +185,7 @@ public class AgenteBusqueda extends AgenteDron {
     * @author Ana, Kieran
     * Se actualiza la información del mapa de memoria con la información conocida por el drone
     */
-    protected void actualizarMapa(){
+    protected void actualizarMapaMemoria(){
         int i, j;
         for(i=0; i < tamanio_radar; i++) {
             for(j=0; j < tamanio_radar; j++) {
@@ -115,7 +207,9 @@ public class AgenteBusqueda extends AgenteDron {
     @Override
     protected void JSONDecode_Inicial(JsonObject mensaje) {
         super.JSONDecode_Inicial(mensaje);
-        inicializarMapa();
+        JsonValue a = mensaje.get("fin_x");
+        if(a != null) { fin_x = a.asInt(); }
+        inicializarMapaMemoria();
     }
     
     /**
