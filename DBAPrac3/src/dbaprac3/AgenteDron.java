@@ -401,7 +401,7 @@ public abstract class AgenteDron extends AgenteSimple{
     * Decodifica el primer mensaje del burocrata
     * INFORM{"result":"OK", "session":"<master>", "dimx":"<w>", "dimy":"<h>", "map":[]}:CONVERSATION-ID@
     */
-    private void JSONDecode_Inicial(JsonObject mensaje){
+    protected void JSONDecode_Inicial(JsonObject mensaje){
         System.out.println("a");
         session = mensaje.get("session").asString();
         max_x = mensaje.get("dimx").asInt();
@@ -595,25 +595,38 @@ public abstract class AgenteDron extends AgenteSimple{
     *   
     * @author Mónica
     */
-    protected boolean recibirObjetivoEncontrado(){
-        JsonObject mensaje = escuchar();
-        return mensaje.get("objetivo-encontrado").asBoolean();
+    protected Pair<Integer,Integer> recibirObjetivoEncontrado(ACLMessage inbox){
+        String coordenadasJSON = inbox.getContent();
+        JsonObject c = Json.parse(coordenadasJSON).asObject();
+        //MODIFICAR 
+        int x = c.get("coordenadas").asObject().get("x").asInt();
+        int y = c.get("coordenadas").asObject().get("y").asInt();
+        
+        Pair<Integer,Integer> coords_obj = new Pair<>(x, y);
+        return coords_obj;
     }
 
     /**
     *
     * @author Mónica
     */
+    /**
+    *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
+    * @author Mónica
+    */
     protected void avisarObjetivoIdentificado(int x, int y){
-        System.out.println("AAAA1");
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-identificado", true);
-        mensaje.add("x", x);
-        mensaje.add("y", y);
+        
+        JsonObject coordenadas =  new JsonObject();
+        coordenadas.add("x", x);
+        coordenadas.add("y", y);
+        mensaje.add("coordenadas", coordenadas);
 
+        System.out.println("Avisando a rescate");
         //avisa al dron de rescate
-        comunicar(burocrata, mensaje.toString(), ACLMessage.INFORM, clave);
-        System.out.println("AAAA2");
+        comunicar(burocrata, mensaje.toString(), ACLMessage.INFORM, clave); //TODO escoger que dron de rescate es: borrar esto luego
+        System.out.println("Rescate Avisado");
     }
     
     /**
@@ -647,6 +660,7 @@ public abstract class AgenteDron extends AgenteSimple{
             }
         }
     }
+    
 
 
     /**

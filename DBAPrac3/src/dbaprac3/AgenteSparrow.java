@@ -8,10 +8,13 @@ package dbaprac3;
 import com.eclipsesource.json.JsonObject;
 import static dbaprac3.Accion.*;
 import es.upv.dsic.gti_ia.core.AgentID;
+import java.awt.image.BufferedImage;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 import javafx.util.Pair;
+import javax.imageio.ImageIO;
 
 /**
  *
@@ -26,8 +29,9 @@ public class AgenteSparrow extends AgenteDron {
     int alemanes_debug = 0; //BORRAR LUEGO, el numero de alemanes que ha visto
     boolean[][] mapaMemoria;
     boolean objetivo;
-    Pair<Integer,Integer> coords_obj;
+    Pair<Integer,Integer> coords_dest;
     boolean busquedaCompletada;
+    boolean mapaMemoria_init;
 
             
     public AgenteSparrow(AgentID aid) throws Exception {
@@ -45,7 +49,8 @@ public class AgenteSparrow extends AgenteDron {
         pasos_desplazamiento = tamanio_radar;
         objetivo = false;
         busquedaCompletada = false;
-        coords_obj = null;
+        mapaMemoria_init = false;
+        coords_dest = null;
     }
     
     /**
@@ -57,10 +62,12 @@ public class AgenteSparrow extends AgenteDron {
         int i, j;
         
         mapaMemoria = new boolean[max_x][max_y];
-        System.out.println("REEEEE" + max_x);
-        for( i=0; i<max_x; i++)
-            for( j=0; j<max_y; i++)
+        for( i=0; i<max_x; i++) {
+            for( j=0; j<max_y; j++) {
                 mapaMemoria[i][j] = mapa[i][j] > max_z;
+            }
+        }
+        mapaMemoria_init = true;
     }
     
     /**
@@ -74,8 +81,7 @@ public class AgenteSparrow extends AgenteDron {
             for(j=0; j < tamanio_radar; j++) {
                 int x = gps.x-(j-centro_radar);
                 int y = gps.y-(i-centro_radar);
-                System.out.println(x + " " + y + " enl " + enLimites(x,y));
-                System.out.println(mapaMemoria[x][y]);
+//                System.out.println(x + " " + y + " enl " + enLimites(x,y));
                 if(enLimites(x,y) && !mapaMemoria[x][y])
                     mapaMemoria[x][y] = true;
             }
@@ -89,8 +95,8 @@ public class AgenteSparrow extends AgenteDron {
     * Se actualiza la información del mapa de memoria con la información conocida por el drone
     */
     @Override
-    protected void JSONDecode_ActualizarMapa(JsonObject mensaje) {
-        super.JSONDecode_ActualizarMapa(mensaje);
+    protected void JSONDecode_Inicial(JsonObject mensaje) {
+        super.JSONDecode_Inicial(mensaje);
         inicializarMapa();
     }
     
@@ -103,7 +109,7 @@ public class AgenteSparrow extends AgenteDron {
         if (angulo_falsogonio < 0) { angulo_falsogonio = 360 + angulo_falsogonio; }
         gonio.angulo = (float) angulo_falsogonio;
         gonio.distancia = 5;
-        return siguienteDireccion(false);
+        return siguienteDireccion(true);
     }
     
     /**
@@ -119,23 +125,21 @@ public class AgenteSparrow extends AgenteDron {
       
       actualizarMapa();
       
+      if(coords_dest != null && coords_dest.getKey() == gps.x && coords_dest.getValue() == gps.y) { objetivo = false; }
+      
       if(!busquedaCompletada) {
         if(!objetivo) {
-        
-        System.out.println("x");    coords_obj = busquedaAnchura(coords_act);
-            if(coords_obj == null) { busquedaCompletada = true; }
+            System.out.println("DRON-S: Buscando Objetivo");
+            coords_dest = busquedaAnchura(coords_act);
+            if(coords_dest == null) { busquedaCompletada = true; }
             else { objetivo = true; }
+            System.out.println("DRON-S: Coords: " + coords_dest);
         }
         
-        System.out.println("x");
-        accion = checkDirObjetivo(coords_obj);
-        
-        System.out.println("x");accion = busquedaMapasAltos(accion);
+        accion = checkDirObjetivo(coords_dest);
+        accion = busquedaMapasAltos(accion);
         accion = checkNavegacionNormal(accion);
-        
-        System.out.println("x");accion = checkManoDerecha(accion);
-        
-        System.out.println("x");
+        accion = checkManoDerecha(accion);
       }
       accion = checkRepostaje(accion);
           
@@ -153,23 +157,65 @@ public class AgenteSparrow extends AgenteDron {
       int x = coords_act.getKey();
       int y = coords_act.getValue();
       
+      int tasa_aceptabilidad = tamanio_radar*(centro_radar-2);
+      int tam_barrido_maximo = Integer.MAX_VALUE;
+      
+      Pair<Integer,Integer> mejor_pair = null;
+      Pair<Integer,Integer> aux_pair;
+      int mejor_int = Integer.MAX_VALUE;
+      int aux_int;
+      
       while(x+tam_barrido < max_x || y + tam_barrido < max_y || x-tam_barrido >= 0 || y-tam_barrido >= 0){ //Mientras la cola no este vacia y no tengmaos objetivo
           for(int i = -tam_barrido; i <= tam_barrido; i++){
               for(int j = -tam_barrido; j <= tam_barrido; j++) {
                   if (Math.abs(i) == tam_barrido || Math.abs(j) == tam_barrido){
-                    if( enLimites(x+i,y+j) && mapaMemoria[x+i][y+j]) { return new Pair<Integer, Integer>(x+i,y+j); }
+                    
+                    //Si no esta en el mapa de memoria, buscamos el mejor que tenga suficientes a false para estar en la tasa de aceptabildad, si no buscamos otro
+                    if( enLimites(x+i,y+j) && !mapaMemoria[x+i][y+j] ) {
+                        aux_pair = new Pair<Integer, Integer>(x+i,y+j);
+                        aux_int = busquedaAnchura_truesEnVision(aux_pair);
+                        if (mejor_pair == null || mejor_int > aux_int ) { mejor_pair = aux_pair; mejor_int = aux_int; }
+                        
+                        if(aux_int > tasa_aceptabilidad && tam_barrido_maximo == Integer.MAX_VALUE){ //Para que no se quede en bucle donde varios son el mejor
+                            tam_barrido_maximo  = tam_barrido + centro_radar;
+                        }
+                        else{ return mejor_pair; }
+                    
+                    
+                    }
                   }
               }
           }
           
           tam_barrido++;
-          
+          if(tam_barrido > tam_barrido_maximo) { return mejor_pair; }
       }
       
       return null;
       
     }
     
+    /**
+    *
+    * @author Kieran
+    */
+    protected int busquedaAnchura_truesEnVision(Pair<Integer,Integer> coords_act) {
+        int i, j;
+        int x = coords_act.getKey();
+        int y = coords_act.getValue();
+        int trues = 0;
+                 
+        for(i=0; i < tamanio_radar; i++) {
+            for(j=0; j < tamanio_radar; j++) {
+                int x2 = x-(j-centro_radar);
+                int y2 = y-(i-centro_radar);
+//                System.out.println(x + " " + y + " enl " + enLimites(x,y));
+                if(enLimites(x2,y2) && mapaMemoria[x2][y2])
+                    trues++;
+            }
+        }
+        return trues;
+    }
     
     /**
     *
@@ -213,6 +259,25 @@ public class AgenteSparrow extends AgenteDron {
     public void finalize(){
         System.out.println("\nAlemanes encontrados: " + alemanes_debug);
         super.finalize(); //Pero si se incluye, esto es obligatorio
+        if(mapaMemoria_init) { imprimirMapaMemoria(); System.out.println("DRON-S: Guardado mapa a disco"); }
+    }
+    
+    public void imprimirMapaMemoria(){
+        BufferedImage imagen = new BufferedImage(max_x, max_y, BufferedImage.TYPE_INT_RGB);
+        for(int i = 0; i < max_x; i++){
+            for(int j = 0; j < max_y; j++){
+                imagen.setRGB(i, j, (mapaMemoria[i][j]) ? ((mapa[i][j] > max_z) ? 0x000080 : 0xffffff) : 0x00000 );
+            }
+        }
+        
+        FileOutputStream fos;
+        try{
+            fos = new FileOutputStream("sparrow_memoria.png");
+            ImageIO.write(imagen, "png", fos);
+            fos.close();
+            System.out.println("Traza guardada");
+        }
+        catch(Exception e) { e.printStackTrace(); }
     }
     
 }
