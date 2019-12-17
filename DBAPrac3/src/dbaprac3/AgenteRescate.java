@@ -34,6 +34,7 @@ public class AgenteRescate extends AgenteDron {
         max_z = 255;
         infrared = new int[tamanio_radar][tamanio_radar];
         
+        
         objetivos = new LinkedList<Pair<Integer,Integer>>();
         obj_x = -1;
         obj_y = -1;
@@ -47,8 +48,8 @@ public class AgenteRescate extends AgenteDron {
     protected void recibirObjetivoEncontrado(JsonObject mensaje){
         
         System.out.println("Rescate: Recibido objetivo");
-        int x = mensaje.get("x").asInt();
-        int y = mensaje.get("y").asInt();
+        int x = mensaje.get("coordenadas").asObject().get("x").asInt();
+        int y = mensaje.get("coordenadas").asObject().get("y").asInt();
 
         System.out.println("Rescate:procesado objetivo");
         objetivos.add(new Pair(x,y));
@@ -90,14 +91,13 @@ public class AgenteRescate extends AgenteDron {
     *
     * @author Kieran
     */
-    @Override
     protected Accion checkMeta(){
         if( (gps.x == obj_x && gps.y == obj_y) || (gps.x == ini_x && gps.y == ini_y && torescue == 0) ) {
             if(gps.z != mapa[gps.x][gps.y]) {
                 return moveDW;
             }
             else {
-                if(torescue == 0) { return stop; }
+                if(torescue == 0) { done = true; return stop; }
                 objetivos.poll();
                 System.out.println("DRON-R: Rescatando. Cola: " + objetivos +". Obj actual: " + obj_x + " " + obj_y);  
                 obj_x = -1; obj_y = -1;
@@ -140,7 +140,13 @@ public class AgenteRescate extends AgenteDron {
     */
     @Override
     protected void bucleExecute(){
-        if(torescue == 0 && estado != Estado.REPOSO) { //No acabar si estamos en la posicion inicial
+        perception();
+        JsonObject msg = escuchar();
+        reply_key = ultimo_mensaje_recibido.getReplyWith();
+
+        JSONDecode_variables(msg);
+        
+        if(torescue == 0) { //Si hemos acabado, volver
             System.out.println("RRRRRRRRRR");
             obj_x = ini_x;
             obj_y = ini_y;
@@ -153,8 +159,13 @@ public class AgenteRescate extends AgenteDron {
             obj_x = objetivos.peek().getKey();
             obj_y = objetivos.peek().getValue();
         }
-        estado = Estado.BUSQUEDA;
+        
         ignorar_msg_objetivos = true; //Hace falta filtrar los mensajes de que ha llegado un nuevo objetivo durante esta parte
-        super.bucleExecute();
+        
+        Accion accion = comprobarAccion();
+        move(accion);
+        escuchar();
+        reply_key = ultimo_mensaje_recibido.getReplyWith();
+        
     }
 }

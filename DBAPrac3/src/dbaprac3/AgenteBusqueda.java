@@ -9,8 +9,11 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import static dbaprac3.Accion.*;
 import es.upv.dsic.gti_ia.core.AgentID;
+import java.awt.image.BufferedImage;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import javafx.util.Pair;
+import javax.imageio.ImageIO;
 
 /**
  *
@@ -40,25 +43,38 @@ public class AgenteBusqueda extends AgenteDron {
     public AgenteBusqueda(AgentID aid) throws Exception{
         super(aid);
         infrarojo = new ArrayList<>();
+        objetivo = false;
+        busquedaCompletada = false;
+        mapaMemoria_init = false;
+        coords_dest = null;
     }
     
-        /**
+    /**
     *
     * @author Ana, Kieran
     * Método sobreescrito de la clase padre para adaptarlo al Sparrow
     */
     @Override
     protected Accion comprobarAccion(){
+        
         Accion accion = null;
+        
+        if(torescue == 0 || busquedaCompletada) {
+            return goHome();
+        }
         
         if (plan == Estrategia.BARRIDO_SIMPLE) { accion = (dir_norte) ? moveN : moveS; }
 
-        if (plan == Estrategia.ANCHURA_ALTO || plan == Estrategia.ANCHURA_BAJO) {
+        else if (plan == Estrategia.ANCHURA_ALTO || plan == Estrategia.ANCHURA_BAJO) {
             accion = preparacionBusqueda();
+            if(accion == null) {
+                accion = goHome();
+                System.out.println("DRON-"+rol+": goHome con " + accion);
+            }
         }
         
         accion = scanInfrarojos(accion);
-            if (plan == Estrategia.BARRIDO_SIMPLE && accion == moveUP) { try{ barridoEnBorde(accion); } catch(Exception e){ e.printStackTrace(); } }
+            if (plan == Estrategia.BARRIDO_SIMPLE && accion != moveUP) { try{ barridoEnBorde(accion); } catch(Exception e){ e.printStackTrace(); } }
         accion = checkNavegacionNormal(accion);
             if(max_z < 255) { accion = checkManoDerecha(accion); }
         accion = checkRepostaje(accion);
@@ -67,6 +83,28 @@ public class AgenteBusqueda extends AgenteDron {
         
     }
 
+    /**
+    *
+    * @author Kieran
+    * Método sobreescrito de la clase padre para adaptarlo al Sparrow
+    */
+    protected Accion goHome(){
+        if(!busquedaCompletada) { coords_dest = new Pair<Integer,Integer>(ini_x,ini_y); }
+        busquedaCompletada = true;
+        Accion accion = checkDirObjetivo(coords_dest);
+        accion = checkNavegacionNormal(accion);
+            if(max_z < 255) { accion = checkManoDerecha(accion); }
+        accion = checkRepostaje(accion);
+        accion = checkMeta(accion);
+        
+        return accion;
+    }
+    
+    /**
+    *
+    * @author Ana, Kieran
+    * Método sobreescrito de la clase padre para adaptarlo al Sparrow
+    */
     protected Accion preparacionBusqueda() {
         actualizarMapaMemoria();
             
@@ -76,7 +114,10 @@ public class AgenteBusqueda extends AgenteDron {
             if(!objetivo) {
                 System.out.println("DRON-" + rol + ": Buscando Objetivo");
                 coords_dest = busquedaAnchura(new Pair<Integer,Integer>(gps.x,gps.y));
-                if(coords_dest == null) { busquedaCompletada = true; }
+                if(coords_dest == null) {
+                    System.out.println("DRON-" + rol + ": Finalizado");
+                    return null;
+                }
                 else { objetivo = true; }
                 System.out.println("DRON-" + rol + ": Coords: " + coords_dest);
             }
@@ -282,4 +323,28 @@ public class AgenteBusqueda extends AgenteDron {
         return trues;
     }
 
+    @Override
+    public void finalize(){
+        System.out.println("\nAlemanes encontrados: " + alemanes_debug);
+        super.finalize(); //Pero si se incluye, esto es obligatorio
+        if(mapaMemoria_init) { imprimirMapaMemoria(); System.out.println("DRON-"+rol+": Guardado mapa a disco"); }
+    }
+    
+    public void imprimirMapaMemoria(){
+        BufferedImage imagen = new BufferedImage(max_x, max_y, BufferedImage.TYPE_INT_RGB);
+        for(int i = 0; i < max_x; i++){
+            for(int j = 0; j < max_y; j++){
+                imagen.setRGB(i, j, (i < ini_x || i > fin_x) ? 0x800000 : (mapaMemoria[i][j]) ?  ((mapa[i][j] > max_z) ? 0x000080 : 0xffffff) : 0x00000 );
+            }
+        }
+        
+        FileOutputStream fos;
+        try{
+            fos = new FileOutputStream( (this.getName() + "_memoria.png") );
+            ImageIO.write(imagen, "png", fos);
+            fos.close();
+            System.out.println("Traza guardada");
+        }
+        catch(Exception e) { e.printStackTrace(); }
+    }
 }

@@ -66,6 +66,7 @@ public abstract class AgenteDron extends AgenteSimple{
     String burocrata;
     int[][] mapa;
     int[][] traza;
+    boolean done;
 
     //dimensiones del mundo en el que se ha logueado, se asigna valor en el JSONDecode_Inicial
     int max_x;
@@ -99,6 +100,7 @@ public abstract class AgenteDron extends AgenteSimple{
         gonio = new Gonio();
         mano_dcha = new Stack<>();
         repostando = false;
+        done = false;
         estado = Estado.REPOSO;
 
 
@@ -326,7 +328,7 @@ public abstract class AgenteDron extends AgenteSimple{
       Accion tmp = checkRepostaje(accion);
       if(tmp != null) return tmp;
 
-      accion = checkMeta();
+      accion = checkMeta(accion);
       if(accion != null) return accion;
 
       accion = checkNavegacionNormal(accion);
@@ -341,11 +343,12 @@ public abstract class AgenteDron extends AgenteSimple{
     * @author Kieran
     * Limpieza de las diversas funcionalidades de comprobarAccion
     */
-    protected Accion checkMeta(){
-        if( gps.x == ini_x && gps.y == ini_y && torescue == 0 ) {
-            //return algo, los drones de rescate bajarán en la meta mientras que los otros solo lo harán para volver a casa;
+    protected Accion checkMeta(Accion accion){
+        if( gps.x == ini_x && gps.y == ini_y ) {
+            if(mapa[gps.x][gps.y] != gps.z) return moveDW;
+            else { done = true; return stop; }
         }
-        return null;
+        return accion;
     }
     protected Accion checkRepostaje(Accion accion){
         if(repostando || (necesitaRepostar(accion) /*&& puedeRepostar()*/)) { //PRAC3 -- DESCOMENTAR
@@ -767,7 +770,7 @@ public abstract class AgenteDron extends AgenteSimple{
 
         System.out.println("DRON: Bucle principal");
 
-        while(true)
+        while(!done)
         {
             bucleExecute();
         }

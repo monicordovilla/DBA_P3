@@ -12,5 +12,8 @@ package dbaprac3;
 public enum Estrategia {
     BARRIDO_SIMPLE,
     ANCHURA_BAJO,
-    ANCHURA_ALTO;
+    ANCHURA_ALTO,
+    BURO_1_CADA,
+    BURO_2_SPARROW,
+    BURO_3_FLY;
 }

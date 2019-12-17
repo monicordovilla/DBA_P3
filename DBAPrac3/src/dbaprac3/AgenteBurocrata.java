@@ -49,10 +49,10 @@ public class AgenteBurocrata extends AgenteSimple {
         this.drones = new ArrayList<>();
 
         System.out.println("BUR: Inicializando");
-        this.drones.add(new DronData("GI_FlyK001", Rol.Fly));
-        this.drones.add(new DronData("GI_SparrowK002", Rol.Sparrow));
-        this.drones.add(new DronData("GI_SparrowK003", Rol.Sparrow));
-        this.drones.add(new DronData("GI_RescueK004", Rol.Rescue));
+        this.drones.add(new DronData("GI_FlyK3-001", Rol.Fly));
+        this.drones.add(new DronData("GI_SparrowK3-002", Rol.Sparrow));
+        this.drones.add(new DronData("GI_SparrowK3-003", Rol.Sparrow));
+        this.drones.add(new DronData("GI_RescueK3-004", Rol.Rescue));
 
         new AgenteFly(new AgentID(drones.get(0).nombre)).start();
         new AgenteSparrow(new AgentID(drones.get(1).nombre)).start();
@@ -499,7 +499,7 @@ public class AgenteBurocrata extends AgenteSimple {
         if( inbox.getPerformative().equals(ACLMessage.QUERY_IF) ){
             repostar.Push(inbox);
         }
-        else if( m.get("objetivo-encontrado") != null ){
+        else if( m.get("objetivo-identificado") != null ){
             objetivos.Push(inbox);
         }
         else if ( m.get("result") != null  ){
@@ -601,12 +601,12 @@ public class AgenteBurocrata extends AgenteSimple {
         //comunicarDron(dronRescue2, m, ACLMessage.INFORM, null);
 
         //PRUBEA DE RESCATE
-        for(int i = 0; i < 5; i++){
+        /*for(int i = 0; i < 5; i++){
             JsonObject coords_objetivo = escuchar();
         System.out.println("AAAA3");
             avisarObjetivoIdentificado(coords_objetivo.get("x").asInt(), coords_objetivo.get("y").asInt());
         System.out.println("AAAA4");
-        }
+        }*/
         //BORRAR LUEGO - PRUEBA
         /*
         for(int i = 0; i < max_y; i++){

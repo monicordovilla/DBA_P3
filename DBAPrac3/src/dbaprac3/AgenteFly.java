@@ -35,10 +35,6 @@ public class AgenteFly extends AgenteBusqueda {
         dir_oeste = false; //Cambiar luego
         infrarojo = new ArrayList();
         pasos_desplazamiento = tamanio_radar;
-        objetivo = false;
-        busquedaCompletada = false;
-        mapaMemoria_init = false;
-        coords_dest = null;
     }
     
   
