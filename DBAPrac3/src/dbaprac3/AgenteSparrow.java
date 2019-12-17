@@ -51,7 +51,7 @@ public class AgenteSparrow extends AgenteDron {
     /**
     *
     * @author Ana
-    * Mapa de memoria sin nada conocido al inicio
+    * Mapa de memoria inicial
     */
     private void inicializarMapa(){
         int i, j;
@@ -146,7 +146,7 @@ public class AgenteSparrow extends AgenteDron {
     /**
     *
     * @author Ana, Kieran
-    * Busqueda en anchura para encontrar un lugar no visitado
+    * Busqueda en anchura para encontrar un lugar no explorado
     */
     private Pair<Integer,Integer> busquedaAnchura(Pair<Integer,Integer> coords_act){
       int tam_barrido = centro_radar+1;
@@ -174,7 +174,7 @@ public class AgenteSparrow extends AgenteDron {
     /**
     *
     * @author Ana, Kieran
-    * Estrategia de búsqueda para mapas altos en los que el equipo esta formado por 2 Fly y 2 Rescue
+    * Estrategia de búsqueda 
     */
     public Accion busquedaMapasAltos(Accion accion){ //Cuando creemos las instancias debemos establecerle un identificador para que aqui segn eso recorra una parte del mapa
         
