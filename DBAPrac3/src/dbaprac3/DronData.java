@@ -34,6 +34,7 @@ class DronData {
     int ini_y;
     Rol rol;
     int recogidos;
+    Estado status;
     
     DronData(String nombre, Rol rol){
         this.nombre = nombre;

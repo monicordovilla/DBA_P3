@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import com.eclipsesource.json.Json;
+import javafx.util.Pair;
 
 /**
  *
@@ -177,50 +178,6 @@ public class AgenteBurocrata extends AgenteSimple {
         return mensaje;
     }
     
-    /**
-    *   PREGUNTAR
-    * @author Monica
-    * Decodifica el estado del dron
-    *
-    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
-    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
-    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
-    * "direction": accion}, ...] }}:CONVERSATION-ID@
-    */
-    /*private String JSONEncode_variables(JsonObject mensaje){
-        JsonObject a = new JsonObject();
-
-        JsonObject coordenadas = new JsonObject();
-        coordenadas.add("x", gps.x);
-        coordenadas.add("y", gps.y);
-        coordenadas.add("z", gps.z);
-        a.add("gps", coordenadas);
-
-        //infrared
-        JsonArray inf = new JsonArray();
-        for(int i=0; i<max_y; i++){
-            for(int j=0; j<max_x; j++){
-                inf.add( mapa[i][j] );
-            }
-        }
-        a.add("infrared", inf);
-
-        //gonio
-        JsonObject g = new JsonObject();
-        g.add("distance", gonio.distancia);
-        g.add("distance", gonio.angulo);
-        a.add("gonio", g);
-
-        //fuel
-        a.add("fuel", fuel);
-
-        //status
-        a.add("status", status);
-
-        //awacs
-        a.add("awacs", awacs);
-        return a.asString();
-    }*/
 
     /**
     * NUEVO AÑADIR ANA A DIAGRAMA
@@ -256,13 +213,11 @@ public class AgenteBurocrata extends AgenteSimple {
     /**
     *
     * @author Mónica
+    * al final no se usa
     */
     protected void avisarObjetivoEncontrado(){
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-encontrado", true);
-
-        //avisa al dron mas cercano en estado busqueda
-        //calcular diferencia entre angulos para ver el mas cercano
 
     }
     
@@ -272,9 +227,15 @@ public class AgenteBurocrata extends AgenteSimple {
     * 
     * MODIFICAR: DEVOLVER X E Y
     */
-    protected boolean recibirObjetivoEncontrado(){
-        JsonObject mensaje = escuchar();
-        return mensaje.get("objetivo-encontrado").asBoolean();
+    protected Pair<Integer,Integer> recibirObjetivoEncontrado(ACLMessage inbox){
+        String coordenadasJSON = inbox.getContent();
+        JsonObject c = Json.parse(coordenadasJSON).asObject();
+        //MODIFICAR 
+        int x = c.get("coordenadas").asObject().get("x").asInt();
+        int y = c.get("coordenadas").asObject().get("y").asInt();
+        
+        Pair<Integer,Integer> coords_obj = new Pair<>(x, y);
+        return coords_obj;
     }
     
     /**
@@ -284,8 +245,11 @@ public class AgenteBurocrata extends AgenteSimple {
     protected void avisarObjetivoIdentificado(int x, int y){
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivo-identificado", true);
-        mensaje.add("x", x);
-        mensaje.add("y", y);
+        
+        JsonObject coordenadas =  new JsonObject();
+        coordenadas.add("x", x);
+        coordenadas.add("y", y);
+        mensaje.add("coordenadas", coordenadas);
 
         System.out.println("Avisando a rescate");
         //avisa al dron de rescate
@@ -294,15 +258,13 @@ public class AgenteBurocrata extends AgenteSimple {
     }
 
     /**
-    *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
+    * 
     * @author Mónica
+    * al final no se usa
     */
-    protected void avisarObjetivosCompletados(int x, int y){
+    protected void avisarObjetivosCompletados(){
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivos-encontrados", true);
-        
-        //avisa al dron de rescate
-        //comunicarDron(dronRescue, mensaje.asString(), ACLMessage.INFORM, clave);
     }
 
     
@@ -319,12 +281,15 @@ public class AgenteBurocrata extends AgenteSimple {
         }
     }
     
+    
     /**
     *
-    * NUEVO AÑADIR ANA A DIAGRAMA
-    * @author Celia
+    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
+    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
+    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
+    * "direction": accion}, ...] }}:CONVERSATION-ID@
+    * @author Celia, Monica
     */  
-    
     private void actualizarDatos(ACLMessage inbox){
         String id= inbox.getSender().toString();
         DronData  dron = getDronData(id);
@@ -339,7 +304,19 @@ public class AgenteBurocrata extends AgenteSimple {
         //Extraer el valor del combustible
         dron.fuel = mensaje.get("fuel").asFloat();
         
+        String estado = mensaje.get("status").asString();
+        
+        switch (estado){
+            case "EXPLORACION": dron.status = Estado.EXPLORACION; break;
+            case "BUSQUEDA": dron.status = Estado.BUSQUEDA; break;
+            case "REPOSO": dron.status = Estado.REPOSO; break;
+            case "REPOSTAJE": dron.status = Estado.REPOSTAJE; break;
+        } 
+        
         dron.consumo_fuel = mensaje.get("consumo_fuel").asFloat();
+        
+        //al no haber liguilla ya no hace falta guardar awacs
+        //no veo necesario que el burocrata tenga el gonio y el infrared de cada dron
     }
     
     
@@ -593,13 +570,9 @@ public class AgenteBurocrata extends AgenteSimple {
                 }
                 if( !objetivos.isEmpty() ){
                     try {
-                        inbox = objetivos.Pop();
-                        String coordenadasJSON = inbox.getContent();
-                        JsonObject c = Json.parse(coordenadasJSON).asObject();
-                        //MODIFICAR 
-                        int x = c.get("x").asInt();
-                        int y = c.get("y").asInt();
-                        avisarObjetivoIdentificado(x,y);
+                        inbox = objetivos.Pop();                        
+                        Pair<Integer,Integer> coordenadas_objetivo = recibirObjetivoEncontrado(inbox);
+                        avisarObjetivoIdentificado(coordenadas_objetivo.getKey(), coordenadas_objetivo.getValue());
                         
                     } catch (InterruptedException ex) {
                         Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
@@ -609,7 +582,7 @@ public class AgenteBurocrata extends AgenteSimple {
                     try {
                         inbox = datos.Pop();
                         //Llamar al guardar drones actualizarDatos
-                        //actualizarDatos(inbox);
+                        actualizarDatos(inbox);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -617,8 +590,8 @@ public class AgenteBurocrata extends AgenteSimple {
             }
             
         }
-        /*if(!validarRespuesta(mensaje)) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
-            escuchar();
+        /*if(!finalizadoExitoso()) { //si se sale por un resultado invalido devuelve las percepciones antes de la traza
+            //crear traza
         }*/
      
         //comunicarDron(dronAux, m, ACLMessage.INFORM, null);
