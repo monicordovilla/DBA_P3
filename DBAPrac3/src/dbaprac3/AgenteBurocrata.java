@@ -49,11 +49,15 @@ public class AgenteBurocrata extends AgenteSimple {
         this.drones = new ArrayList<>();
 
         System.out.println("BUR: Inicializando");
-        this.drones.add(new DronData("GI_SparrowK04", Rol.Sparrow));
-        //this.drones.add(new DronData("GI_Rescue0l1", Rol.Rescue));
+        this.drones.add(new DronData("GI_FlyK01", Rol.Fly));
+        this.drones.add(new DronData("GI_SparrowK02", Rol.Sparrow));
+        this.drones.add(new DronData("GI_SparrowK03", Rol.Sparrow));
+        this.drones.add(new DronData("GI_RescueK04", Rol.Rescue));
 
-        new AgenteSparrow(new AgentID(drones.get(0).nombre)).start();
-        //new AgenteRescate(new AgentID(drones.get(1).nombre)).start();
+        //new AgenteFly(new AgentID(drones.get(0).nombre)).start();
+        new AgenteSparrow(new AgentID(drones.get(1).nombre)).start();
+        new AgenteSparrow(new AgentID(drones.get(2).nombre)).start();
+        //new AgenteRescate(new AgentID(drones.get(3).nombre)).start();
 
         System.out.println("BUR: Inicializado drones");
     }
@@ -458,24 +462,23 @@ public class AgenteBurocrata extends AgenteSimple {
         int x=0;
         int y=0;
 
-        if(id == 0){ //FLY1
+        /*if(id == 0){ //FLY1
             x=Math.max(max_x/2-20, 0);
         }
-        /*}else if(id.equals(drones.get(2).nombre)){ //FLY2
+        else if(id == 2){ //FLY2
             x=Math.min(max_x/2+20, max_x-1);
-        }*/
+        }
         else if(id == 1){ //RESCUE1
             y = max_y/2;
         }
-        /*else if(id.equals(drones.get(3).nombre)){ //RESCUE2
+        else if(id == 3){ //RESCUE2
             x = max_x-1;
             y = max_y/2;
-        }*/
-        else {
-            x = 0+id;
         }
+        else {*/
+            x = 0+id*5;
+        //}
 
-        System.out.println("ULTRASKAK");
         drones.get(id).ini_x=x;
         drones.get(id).ini_y=y;
 
