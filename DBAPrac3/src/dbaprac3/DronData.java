@@ -11,10 +11,6 @@ package dbaprac3;
  */
 
 class DronData {
-
-    DronData() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
     
     protected class GPS {
         public int x;

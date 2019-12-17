@@ -288,16 +288,11 @@ public class AgenteBurocrata extends AgenteSimple {
 
     /**
     *
-    * INFORM{"result":{"gps":"{x,y,z}", "infrared":"{0,0,...}",
-    * "gonio":"{"distance": -1, "angle": -1}", "fuel":100, "goal": false,
-    * "status": operative, "awacs":[{"name":<agent1>, "x":10, "y":99, "z":100,
-    * "direction": accion}, ...] }}:CONVERSATION-ID@
-    * @author Celia, Monica
+    * @author Celia
     */
     private void actualizarDatos(ACLMessage inbox){
         String id= inbox.getSender().toString();
         DronData  dron = getDronData(id);
-        comunicar(id, "datos", ACLMessage.QUERY_REF, "datos");
 
         JsonObject mensaje = Json.parse(inbox.getContent()).asObject();
 
@@ -308,22 +303,13 @@ public class AgenteBurocrata extends AgenteSimple {
         //Extraer el valor del combustible
         dron.fuel = mensaje.get("fuel").asFloat();
 
-        String estado = mensaje.get("status").asString();
-
-        switch (estado){
-            case "EXPLORACION": dron.status = Estado.EXPLORACION; break;
-            case "BUSQUEDA": dron.status = Estado.BUSQUEDA; break;
-            case "REPOSO": dron.status = Estado.REPOSO; break;
-            case "REPOSTAJE": dron.status = Estado.REPOSTAJE; break;
-        }
-
         dron.consumo_fuel = mensaje.get("consumo_fuel").asFloat();
-
-        //al no haber liguilla ya no hace falta guardar awacs
-        //no veo necesario que el burocrata tenga el gonio y el infrared de cada dron
     }
 
-
+    /**
+    *
+    * @author Celia
+    */
     DronData getDronData(String id){
         for(DronData d : drones){
             if(d.nombre.equals(id))
@@ -333,6 +319,40 @@ public class AgenteBurocrata extends AgenteSimple {
         return null;
     }
 
+        /**
+    *
+    * @author Celia
+    */
+    private void solicitarDatos(String id){
+        comunicar(id, "datos", ACLMessage.QUERY_REF, "datos");
+
+        ACLMessage inbox = null;
+        try{
+            inbox = this.receiveACLMessage();
+        }
+        catch(Exception e){
+            System.out.println("Error de comunicación: Excepción al escuchar");
+        }
+        
+        while(!queue.isEmpty()){
+            try {
+                separarMensajes();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        if(!datos.isEmpty() ){
+            try {
+                inbox = datos.Pop();
+                //Llamar al guardar drones actualizarDatos
+                actualizarDatos(inbox);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
     //METODOS DE CONTROL
 
 
@@ -348,34 +368,34 @@ public class AgenteBurocrata extends AgenteSimple {
         if(dron==null)
             return false;
 
-        //actualizarDatos(nombre);
+        solicitarDatos(nombre);
         volver.add(dron);
 
         if(dron.rol==Rol.Rescue){
             for(DronData d : drones)
                 if(d.rol==Rol.Rescue && d.recogidos>dron.recogidos){
-                    //actualizarDatos(d.nombre);
+                    solicitarDatos(d.nombre);
                     volver.add(d);
                 }
         }
         else if(dron.rol==Rol.Fly){
             for(DronData d : drones)
                  if(d.rol==Rol.Rescue){
-                    //actualizarDatos(d.nombre);
+                    solicitarDatos(d.nombre);
                     volver.add(d);
                  }
         }
         else if(dron.rol==Rol.Sparrow){
              for(DronData d : drones)
                  if(d.rol==Rol.Rescue || d.rol==Rol.Fly){
-                    //actualizarDatos(d.nombre);
+                    solicitarDatos(d.nombre);
                     volver.add(d);
                  }
         }
         else
             for(DronData d : drones)
                  if(d.rol!=Rol.Hawk){
-                    //actualizarDatos(d.nombre);
+                    solicitarDatos(d.nombre);
                     volver.add(d);
                  }
 
@@ -441,7 +461,7 @@ public class AgenteBurocrata extends AgenteSimple {
 
         for(DronData d : drones){
             if(d.rol==Rol.Rescue){
-                //actualizarDatos(d.nombre);
+                solicitarDatos(d.nombre);
                 pasos = numPasos(d.gps.x, d.gps.y, d.gps.z, x, y, z);
                 if(pasos<pasosMin){
                     dron=d;
@@ -564,6 +584,15 @@ public class AgenteBurocrata extends AgenteSimple {
 
             while( !repostar.isEmpty() || !objetivos.isEmpty() || !datos.isEmpty() ){
                 inbox = null;
+                if( !datos.isEmpty() ){
+                    try {
+                        inbox = datos.Pop();
+                        //Llamar al guardar drones actualizarDatos
+                        actualizarDatos(inbox);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
                 if( !repostar.isEmpty() ){
                     try {
                         inbox = repostar.Pop();
@@ -579,15 +608,6 @@ public class AgenteBurocrata extends AgenteSimple {
                         Pair<Integer,Integer> coordenadas_objetivo = recibirObjetivoEncontrado(inbox);
                         avisarObjetivoIdentificado(coordenadas_objetivo.getKey(), coordenadas_objetivo.getValue());
 
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                if( !datos.isEmpty() ){
-                    try {
-                        inbox = datos.Pop();
-                        //Llamar al guardar drones actualizarDatos
-                        actualizarDatos(inbox);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
                     }
