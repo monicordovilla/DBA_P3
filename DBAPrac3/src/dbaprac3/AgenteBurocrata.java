@@ -464,7 +464,7 @@ public class AgenteBurocrata extends AgenteSimple {
 
         for(DronData d : drones){
             if(d.rol==Rol.Rescue){
-                solicitarDatos(d.nombre);
+                //solicitarDatos(d.nombre);
                 pasos = numPasos(d.gps.x, d.gps.y, d.gps.z, x, y, z);
                 if(pasos<pasosMin){
                     dron=d;

@@ -74,7 +74,7 @@ public class AgenteBusqueda extends AgenteDron {
         }
         
         accion = scanInfrarojos(accion);
-            if (plan == Estrategia.BARRIDO_SIMPLE && accion != moveUP) { try{ barridoEnBorde(accion); } catch(Exception e){ e.printStackTrace(); } }
+            if (plan == Estrategia.BARRIDO_SIMPLE && accion != moveUP) {  barridoEnBorde(accion); }
         accion = checkNavegacionNormal(accion);
             if(max_z < 255) { accion = checkManoDerecha(accion); }
         accion = checkRepostaje(accion);
