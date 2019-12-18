@@ -273,6 +273,17 @@ public class AgenteBurocrata extends AgenteSimple {
         JsonObject mensaje = new JsonObject();
         mensaje.add("objetivos-encontrados", true);
     }
+    
+    /**
+    *
+    * @author Mónica
+    */
+    protected void pararDron(String nombreDron){
+        JsonObject mensaje = new JsonObject();
+        mensaje.add("para", true);
+        String m = mensaje.toString();
+        comunicar(nombreDron, m, ACLMessage.INFORM, clave);
+    }
 
 
     /**
@@ -287,7 +298,6 @@ public class AgenteBurocrata extends AgenteSimple {
             comunicar(dron, "DENEGADO", ACLMessage.DISCONFIRM, clave);
         }
     }
-
 
     /**
     *
@@ -335,24 +345,6 @@ public class AgenteBurocrata extends AgenteSimple {
         }
         catch(Exception e){
             System.out.println("Error de comunicación: Excepción al escuchar");
-        }
-        
-        while(!queue.isEmpty()){
-            try {
-                separarMensajes();
-            } catch (InterruptedException ex) {
-                Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        
-        if(!datos.isEmpty() ){
-            try {
-                inbox = datos.Pop();
-                //Llamar al guardar drones actualizarDatos
-                actualizarDatos(inbox);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
     }
     
@@ -504,6 +496,7 @@ public class AgenteBurocrata extends AgenteSimple {
 
         dron.ini_x = x; dron.ini_y = y; dron.fin_x = fx;
     }
+    
 //METODOS PARA LA GESTION DE MENSAJES
 
     /**

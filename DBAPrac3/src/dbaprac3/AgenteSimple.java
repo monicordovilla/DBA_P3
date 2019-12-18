@@ -35,7 +35,7 @@ public abstract class AgenteSimple extends SuperAgent{
 
     /**
     *
-    * @author Kieran, Monica, Celia
+    * @author Kieran, Monica
     */
     protected boolean validarRespuesta(ACLMessage respuesta){
         if(respuesta.getPerformative().equals(ACLMessage.AGREE))
@@ -50,6 +50,10 @@ public abstract class AgenteSimple extends SuperAgent{
         }
     }
     
+    /**
+    *
+//    * @author Monica
+    */
     protected boolean finalizadoExitorso(ACLMessage respuesta){
         if(respuesta.getPerformative().equals(ACLMessage.AGREE)){
             return true;

@@ -107,6 +107,11 @@ public class AgenteRescate extends AgenteDron {
         return null;
     }
     
+    /**
+    *
+    * @author Kieran
+    *//*
+    @Override
     protected JsonObject escuchar_until_servidor(){ //Descutrear luego. Escucha hasta que le llegue un mensaje del servidor, luego para.
         ACLMessage ultimo_mensaje_real = ultimo_mensaje_recibido;
         JsonObject escuchado = super.escuchar();
@@ -119,7 +124,7 @@ public class AgenteRescate extends AgenteDron {
         }
         System.out.println("DRON-R: No existe el campo objetivo-encontrado. Siguiendo.");
         return escuchado;
-    }
+    }*/
     
     /**
     *

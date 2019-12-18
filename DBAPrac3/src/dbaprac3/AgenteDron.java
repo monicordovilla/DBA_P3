@@ -410,6 +410,20 @@ public abstract class AgenteDron extends AgenteSimple{
 //METODOS DE JSON: Codifican y descodifican los mensajes en formato JSON para facilitar el manejo de los datos recibidos
 //PRAC3 -- NO LAS TOCAN LAS SUBLCASES, FALTAN COSAS AQUI
 
+    protected JsonObject escuchar_until_servidor(){ //Descutrear luego. Escucha hasta que le llegue un mensaje del servidor, luego para.
+        ACLMessage ultimo_mensaje_real = ultimo_mensaje_recibido;
+        JsonObject escuchado = super.escuchar();
+        
+        while(escuchado.get("objetivo-identificado") != null){
+            //recibirObjetivoEncontrado(escuchado);
+            ultimo_mensaje_recibido = ultimo_mensaje_real; //Ignora mensajes del burocrata para la conversación con el servidor. Descutrear luego. 
+            System.out.println("DRON-R: Si existe el campo objetivo-encontrado. Guardando objetivo.");  
+            escuchado = super.escuchar();
+        }
+        System.out.println("DRON-R: No existe el campo objetivo-encontrado. Siguiendo.");
+        return escuchado;
+    }
+    
     /**
     *
     * @author Monica
