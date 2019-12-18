@@ -148,6 +148,76 @@ public class AgenteBurocrata extends AgenteSimple {
         return resultado;
     }
     
+    /**
+    *
+    * @author Monica
+    * Método para inicializar dron para la estrategia de barrido simple
+    */
+    private void inicializarBarridoSimple(){}
+    
+    /**
+    *
+    * @author Monica
+    * Método para inicializar dron para la estrategia de anchura bajo
+    */
+    private void inicializarAnchuraBajo(){}
+    
+    /**
+    *
+    * @author Monica
+    * Método para inicializar dron para la estrategia de anchura alto
+    */
+    private void inicializarAnchuraAlto(){}
+    
+    /**
+    *
+    * @author Monica
+    * Método para inicializar dron para la estrategia de baun dron de cada tipo
+    */
+    private void inicializar1Cada(){}
+    
+    /**
+    *
+    * @author Monica
+    * Método para inicializar dron para la estrategia de 2 drons sparrow
+    */
+    private void inicializar2Sparrow(){}
+    
+    /**
+    *
+    * @author Monica
+    * Método para inicializar dron para la estrategia con 3 drons de tipo fly
+    */
+    private void inicializar3Fly(){}
+    
+    /**
+    *
+    * @author Monica
+    * Método para inicializar dron segun el tipo de estrategia
+    */
+    private void inicializarDron(Estrategia estrategia){
+        switch(estrategia){
+            case BARRIDO_SIMPLE:
+                inicializarBarridoSimple();
+                break;
+            case ANCHURA_BAJO:
+                inicializarAnchuraBajo();
+                break;
+            case ANCHURA_ALTO:
+                inicializarAnchuraAlto();
+                break;
+            case BURO_1_CADA:
+                inicializar1Cada();
+                break;
+            case BURO_2_SPARROW:
+                inicializar2Sparrow();
+                break;
+            case BURO_3_FLY:
+                inicializar3Fly();
+                break;
+        }
+    }
+    
     
 //METODOS DE COMUNICACION CON EL CONTROLLER
     /**
