@@ -250,6 +250,20 @@ public class AgenteBusqueda extends AgenteDron {
     @Override
     protected void JSONDecode_Inicial(JsonObject mensaje) {
         super.JSONDecode_Inicial(mensaje);
+        
+        JsonValue estrategia = mensaje.get("estrategia");
+        switch(estrategia.toString()){
+            case "BARRIDO_SIMPLE":
+                plan = Estrategia.BARRIDO_SIMPLE;
+                break;
+            case "ANCHURA_BAJO":
+                plan = Estrategia.ANCHURA_BAJO;
+                break;
+            case "ANCHURA_ALTO":
+                plan = Estrategia.ANCHURA_ALTO;
+                break;
+        }
+        
         JsonValue a = mensaje.get("area_ini_x");
         try{
             if(a != null && a.asInt() != -1) { area_ini_x = a.asInt(); }

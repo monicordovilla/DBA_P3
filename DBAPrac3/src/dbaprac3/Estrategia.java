@@ -8,6 +8,8 @@ package dbaprac3;
 /**
  *
  * @author anabosch
+ * aquellos que empiezan BURO_ es para que el burocrata inicialize los drones
+ * y el resto son estrategias de exploracion de los distintos drones de busqueda
  */
 public enum Estrategia {
     BARRIDO_SIMPLE,
