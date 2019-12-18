@@ -282,7 +282,7 @@ public class AgenteBurocrata extends AgenteSimple {
         JsonObject mensaje = new JsonObject();
         mensaje.add("para", true);
         String m = mensaje.toString();
-        comunicar(nombreDron, m, ACLMessage.INFORM, clave);
+        comunicar(nombreDron, m, ACLMessage.REQUEST, clave);
     }
 
 

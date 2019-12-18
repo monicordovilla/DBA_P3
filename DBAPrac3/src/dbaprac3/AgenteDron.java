@@ -50,7 +50,6 @@ public abstract class AgenteDron extends AgenteSimple{
     float fuel;
     int torescue;
     boolean goal;
-    JsonValue awacs;
 
     //PRAC3 -- OBLIGATORIO SOBREESCRIBIR ESTOS METODOS EN SUBCLASES
     String rol;
@@ -417,9 +416,18 @@ public abstract class AgenteDron extends AgenteSimple{
         while(escuchado.get("objetivo-identificado") != null){
             //recibirObjetivoEncontrado(escuchado);
             ultimo_mensaje_recibido = ultimo_mensaje_real; //Ignora mensajes del burocrata para la conversación con el servidor. Descutrear luego. 
-            System.out.println("DRON-R: Si existe el campo objetivo-encontrado. Guardando objetivo.");  
+            System.out.println("DRON: Si existe el campo objetivo-encontrado. Guardando objetivo.");  
             escuchado = super.escuchar();
         }
+        
+        while(escuchado.get("parar") != null){
+            //recibirObjetivoEncontrado(escuchado);
+            ultimo_mensaje_recibido = ultimo_mensaje_real; //Ignora mensajes del burocrata para la conversación con el servidor. Descutrear luego.
+            estado = Estado.REPOSO;
+            System.out.println("DRON parar");  
+            escuchado = super.escuchar();
+        }
+        
         System.out.println("DRON-R: No existe el campo objetivo-encontrado. Siguiendo.");
         return escuchado;
     }
@@ -541,7 +549,7 @@ public abstract class AgenteDron extends AgenteSimple{
         a.add("status", status);
 
         //awacs
-        a.add("awacs", awacs);
+        //a.add("awacs", awacs);
         return a.asString();
     }
 
