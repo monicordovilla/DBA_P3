@@ -48,7 +48,8 @@ public class AgenteBurocrata extends AgenteSimple {
         super(aid);
         this.drones = new ArrayList<>();
 
-        System.out.println("BUR: Inicializando");
+        //Ahora en inicializar drones
+        /*System.out.println("BUR: Inicializando");
         this.drones.add(new DronData("GI_FlyK3-001", Rol.Fly));
         this.drones.add(new DronData("GI_SparrowK3-002", Rol.Sparrow));
         this.drones.add(new DronData("GI_SparrowK3-003", Rol.Sparrow));
@@ -59,7 +60,7 @@ public class AgenteBurocrata extends AgenteSimple {
         new AgenteSparrow(new AgentID(drones.get(2).nombre)).start();
         new AgenteRescate(new AgentID(drones.get(3).nombre)).start();
 
-        System.out.println("BUR: Inicializado drones");
+        System.out.println("BUR: Inicializado drones");*/
     }
 
 
@@ -109,13 +110,10 @@ public class AgenteBurocrata extends AgenteSimple {
     * Método para seleccionar la estrategia desde el terminal
     */
     private Estrategia seleccionarEstrategia(){
-        System.out.println("Inserte estrategia: ");
-        System.out.println("1) Barrido Simple");
-        System.out.println("2) Anchura Bajo");
-        System.out.println("3) Anchura Alto");
-        System.out.println("4) 1 de cada");
-        System.out.println("5) 2 sparrow");
-        System.out.println("6) 3 fly");
+        System.out.println("Escoge la estrategia: ");
+        System.out.println("1) 1 de cada");
+        System.out.println("2) 2 sparrow");
+        System.out.println("3) 3 fly");
         Scanner s = new Scanner(System.in);
         String estrategia = s.nextLine();
         
@@ -123,25 +121,16 @@ public class AgenteBurocrata extends AgenteSimple {
         int num = Integer.parseInt(estrategia);
         switch(num){
             case 1:
-                resultado = Estrategia.BARRIDO_SIMPLE;
-                break;
-            case 2:
-                resultado = Estrategia.ANCHURA_BAJO;
-                break;
-            case 3:
-                resultado = Estrategia.ANCHURA_ALTO;
-                break;
-            case 4:
                 resultado = Estrategia.BURO_1_CADA;
                 break;
-            case 5:
+            case 2:
                 resultado = Estrategia.BURO_2_SPARROW;
                 break;
-            case 6:
+            case 3:
                 resultado = Estrategia.BURO_3_FLY;
                 break;
             default:
-                resultado = Estrategia.BARRIDO_SIMPLE;
+                resultado = Estrategia.BURO_1_CADA;
                 break;
         }
         
@@ -151,69 +140,78 @@ public class AgenteBurocrata extends AgenteSimple {
     /**
     *
     * @author Monica
-    * Método para inicializar dron para la estrategia de barrido simple
+    * Método para inicializar dron para la estrategia con un dron de cada tipo
     */
-    private void inicializarBarridoSimple(){}
+    private void inicializar1Cada(String nombre) throws Exception{
+        System.out.println("BUR: Inicializando");
+        this.drones.add(new DronData("GI_Fly-" + nombre, Rol.Fly));
+        this.drones.add(new DronData("GI_Sparrow1-"  + nombre, Rol.Sparrow));
+        this.drones.add(new DronData("GI_Hawk1-" + nombre, Rol.Hawk));
+        this.drones.add(new DronData("GI_Rescue-"  + nombre, Rol.Rescue));
+
+        new AgenteFly(new AgentID(drones.get(0).nombre)).start();
+        new AgenteSparrow(new AgentID(drones.get(1).nombre)).start();
+        new AgenteSparrow(new AgentID(drones.get(2).nombre)).start();
+        new AgenteRescate(new AgentID(drones.get(3).nombre)).start();
+
+        System.out.println("BUR: Inicializado drones");
+    }
     
     /**
     *
     * @author Monica
-    * Método para inicializar dron para la estrategia de anchura bajo
+    * Método para inicializar dron para la estrategia con 2 drons sparrow
     */
-    private void inicializarAnchuraBajo(){}
-    
-    /**
-    *
-    * @author Monica
-    * Método para inicializar dron para la estrategia de anchura alto
-    */
-    private void inicializarAnchuraAlto(){}
-    
-    /**
-    *
-    * @author Monica
-    * Método para inicializar dron para la estrategia de baun dron de cada tipo
-    */
-    private void inicializar1Cada(){}
-    
-    /**
-    *
-    * @author Monica
-    * Método para inicializar dron para la estrategia de 2 drons sparrow
-    */
-    private void inicializar2Sparrow(){}
+    private void inicializar2Sparrow(String nombre) throws Exception{
+        System.out.println("BUR: Inicializando");
+        this.drones.add(new DronData("GI_Fly-" + nombre, Rol.Fly));
+        this.drones.add(new DronData("GI_Sparrow1-"  + nombre, Rol.Sparrow));
+        this.drones.add(new DronData("GI_Sparrow2-" + nombre, Rol.Sparrow));
+        this.drones.add(new DronData("GI_Rescue-"  + nombre, Rol.Rescue));
+
+        new AgenteFly(new AgentID(drones.get(0).nombre)).start();
+        new AgenteSparrow(new AgentID(drones.get(1).nombre)).start();
+        new AgenteSparrow(new AgentID(drones.get(2).nombre)).start();
+        new AgenteRescate(new AgentID(drones.get(3).nombre)).start();
+
+        System.out.println("BUR: Inicializado drones");
+    }
     
     /**
     *
     * @author Monica
     * Método para inicializar dron para la estrategia con 3 drons de tipo fly
     */
-    private void inicializar3Fly(){}
+    private void inicializar3Fly(String nombre) throws Exception{
+        System.out.println("BUR: Inicializando");
+        this.drones.add(new DronData("GI_Fly1-" + nombre, Rol.Fly));
+        this.drones.add(new DronData("GI_Fly2-"  + nombre, Rol.Fly));
+        this.drones.add(new DronData("GI_Fly3-" + nombre, Rol.Fly));
+        this.drones.add(new DronData("GI_Rescue-"  + nombre, Rol.Rescue));
+
+        new AgenteFly(new AgentID(drones.get(0).nombre)).start();
+        new AgenteSparrow(new AgentID(drones.get(1).nombre)).start();
+        new AgenteSparrow(new AgentID(drones.get(2).nombre)).start();
+        new AgenteRescate(new AgentID(drones.get(3).nombre)).start();
+
+        System.out.println("BUR: Inicializado drones");
+    }
     
     /**
     *
     * @author Monica
     * Método para inicializar dron segun el tipo de estrategia
     */
-    private void inicializarDron(Estrategia estrategia){
+    private void inicializarDron(Estrategia estrategia, String nombre) throws Exception{
         switch(estrategia){
-            case BARRIDO_SIMPLE:
-                inicializarBarridoSimple();
-                break;
-            case ANCHURA_BAJO:
-                inicializarAnchuraBajo();
-                break;
-            case ANCHURA_ALTO:
-                inicializarAnchuraAlto();
-                break;
             case BURO_1_CADA:
-                inicializar1Cada();
+                inicializar1Cada(nombre);
                 break;
             case BURO_2_SPARROW:
-                inicializar2Sparrow();
+                inicializar2Sparrow(nombre);
                 break;
             case BURO_3_FLY:
-                inicializar3Fly();
+                inicializar3Fly(nombre);
                 break;
         }
     }
