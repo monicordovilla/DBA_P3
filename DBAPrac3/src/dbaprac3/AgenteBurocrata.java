@@ -396,7 +396,7 @@ public class AgenteBurocrata extends AgenteSimple {
 
 
     /**
-    * NUEVO AÑADIR ANA A DIAGRAMA
+    * NUEVO 
     * @author Monica
     * Codifica la actualización del mapa que se le va a enviar al dron
     * REQUEST{"mapa":"{}", "dimx":"<int>", "dimy":<int>}
@@ -455,7 +455,7 @@ public class AgenteBurocrata extends AgenteSimple {
     }
 
     /**
-    *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
+    * 
     * @author Mónica
     */
     protected void avisarObjetivoIdentificado(int x, int y){
@@ -760,13 +760,21 @@ public class AgenteBurocrata extends AgenteSimple {
         String m;
 
         int num_dron = 0;
-        for(DronData dron : drones){
+        
+        Estrategia e = seleccionarEstrategia();
+        try {
+            inicializarDron(e, "P3");
+        } catch (Exception ex) {
+            Logger.getLogger(AgenteBurocrata.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        /*for(DronData dron : drones){
             asignarInicio(num_dron);
             //m = JSONEncode_InicialDron(dron.ini_x, dron.ini_y, dron.area_ini_x, dron.area_fin_x);
             //System.out.println("BUR: Codificando JSON");
             //comunicar(dron.nombre, m, ACLMessage.INFORM, null);
             num_dron++;
-        }
+        }*/
 
         while(num_dron != 0){
 

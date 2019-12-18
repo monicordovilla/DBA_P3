@@ -244,7 +244,7 @@ public class AgenteBusqueda extends AgenteDron {
     
     /**
     *
-    * @author Kieran
+    * @author Kieran, Monica
     * Se actualiza la información del mapa de memoria con la información conocida por el drone
     */
     @Override
