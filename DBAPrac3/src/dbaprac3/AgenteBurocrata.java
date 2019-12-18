@@ -102,7 +102,53 @@ public class AgenteBurocrata extends AgenteSimple {
 
     }
 
-
+//METODOS PARA LA ELECCION DE ESTRATEGIA
+    /**
+    *
+    * @author Monica
+    * Método para seleccionar la estrategia desde el terminal
+    */
+    private Estrategia seleccionarEstrategia(){
+        System.out.println("Inserte estrategia: ");
+        System.out.println("1) Barrido Simple");
+        System.out.println("2) Anchura Bajo");
+        System.out.println("3) Anchura Alto");
+        System.out.println("4) 1 de cada");
+        System.out.println("5) 2 sparrow");
+        System.out.println("6) 3 fly");
+        Scanner s = new Scanner(System.in);
+        String estrategia = s.nextLine();
+        
+        Estrategia resultado;
+        int num = Integer.parseInt(estrategia);
+        switch(num){
+            case 1:
+                resultado = Estrategia.BARRIDO_SIMPLE;
+                break;
+            case 2:
+                resultado = Estrategia.ANCHURA_BAJO;
+                break;
+            case 3:
+                resultado = Estrategia.ANCHURA_ALTO;
+                break;
+            case 4:
+                resultado = Estrategia.BURO_1_CADA;
+                break;
+            case 5:
+                resultado = Estrategia.BURO_2_SPARROW;
+                break;
+            case 6:
+                resultado = Estrategia.BURO_3_FLY;
+                break;
+            default:
+                resultado = Estrategia.BARRIDO_SIMPLE;
+                break;
+        }
+        
+        return resultado;
+    }
+    
+    
 //METODOS DE COMUNICACION CON EL CONTROLLER
     /**
     *
