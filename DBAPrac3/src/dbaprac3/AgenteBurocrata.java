@@ -161,7 +161,7 @@ public class AgenteBurocrata extends AgenteSimple {
     * Codifica el primer mesaje que se le va a enviar al dron
     * INFORM{"result":"<OK>", "session":"<master>", "dimx":<w>, "dimy":<h>, "map":[...], "x":<int>, "y":<int>, "estado":"<s>"}
     */
-    private String JSONEncode_InicialDron(int x, int y, int fin_x){
+    private String JSONEncode_InicialDron(int x, int y, int fin_x, int ini_x){
         JsonObject a = new JsonObject();
 
         a.add("result", "OK");
@@ -174,11 +174,13 @@ public class AgenteBurocrata extends AgenteSimple {
         map = JSON_Mapa();
         a.add("map",map);
 
-        if(fin_x < 0 || fin_x >= max_x) { fin_x = max_x-1; }
+        if(fin_x < 0 || fin_x >= max_x) { fin_x = -1; }
+        if(ini_x < 0 || fin_x >= max_x) { fin_x = -1; }
         
         a.add("x", x);
         a.add("y", y);
-        a.add("fin_x", fin_x);
+        a.add("area_fin_x", fin_x);
+        a.add("area_ini_x", ini_x);
         a.add("estado", "EXPLORACION" );
 
         String mensaje = a.toString();
@@ -494,7 +496,7 @@ public class AgenteBurocrata extends AgenteSimple {
             y = max_y/2;
         }
 
-        dron.ini_x = x; dron.ini_y = y; dron.fin_x = fx;
+        dron.ini_x = x; dron.ini_y = y; dron.area_fin_x = fx;
     }
     
 //METODOS PARA LA GESTION DE MENSAJES
@@ -553,7 +555,7 @@ public class AgenteBurocrata extends AgenteSimple {
         int num_dron = 0;
         for(DronData dron : drones){
             asignarInicio(num_dron);
-            m = JSONEncode_InicialDron(dron.ini_x, dron.ini_y, dron.fin_x);
+            m = JSONEncode_InicialDron(dron.ini_x, dron.ini_y, dron.area_ini_x, dron.area_fin_x);
             System.out.println("BUR: Codificando JSON");
             comunicar(dron.nombre, m, ACLMessage.INFORM, null);
             num_dron++;

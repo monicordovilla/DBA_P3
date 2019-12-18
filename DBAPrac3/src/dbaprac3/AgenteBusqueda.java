@@ -27,7 +27,9 @@ public class AgenteBusqueda extends AgenteDron {
     int max_z_sparrow = 240;
     Estrategia plan;
     
-    int fin_x = 0;
+    int area_ini_x = -1;
+    int area_fin_x = -1;
+    boolean area_limitado = false;
     
     //Estrategia BARRIDO_SIMPLE
     boolean dir_norte; //Cambiar luego
@@ -202,8 +204,8 @@ public class AgenteBusqueda extends AgenteDron {
     protected void inicializarMapaMemoria(){
         int i, j;
         
-        int aux_i = (plan == Estrategia.ANCHURA_ALTO) ? 0 : ini_x;
-        int aux_f = (plan == Estrategia.ANCHURA_ALTO) ? max_x-1 : fin_x;
+        int aux_i = (plan == Estrategia.ANCHURA_ALTO || !area_limitado) ? 0 : area_ini_x;
+        int aux_f = (plan == Estrategia.ANCHURA_ALTO || !area_limitado) ? max_x-1 : area_fin_x;
         
         mapaMemoria = new boolean[max_x][max_y];
         for( i=0; i<max_x; i++) {
@@ -248,8 +250,14 @@ public class AgenteBusqueda extends AgenteDron {
     @Override
     protected void JSONDecode_Inicial(JsonObject mensaje) {
         super.JSONDecode_Inicial(mensaje);
-        JsonValue a = mensaje.get("fin_x");
-        if(a != null) { fin_x = a.asInt(); }
+        JsonValue a = mensaje.get("area_ini_x");
+        try{
+            if(a != null && a.asInt() != -1) { area_ini_x = a.asInt(); }
+            a = mensaje.get("area_fin_x");
+            if(a != null&& a.asInt() != -1) { area_fin_x = a.asInt(); }
+            if(area_fin_x != -1 && area_ini_x != -1) { area_limitado = true; }
+        }
+        catch(Exception e) { System.out.println("Error cogiendo area_ini_x y area_fin_x"); }
         inicializarMapaMemoria();
     }
     
@@ -334,7 +342,7 @@ public class AgenteBusqueda extends AgenteDron {
         BufferedImage imagen = new BufferedImage(max_x, max_y, BufferedImage.TYPE_INT_RGB);
         for(int i = 0; i < max_x; i++){
             for(int j = 0; j < max_y; j++){
-                imagen.setRGB(i, j, (i < ini_x || i > fin_x) ? 0x800000 : (mapaMemoria[i][j]) ?  ((mapa[i][j] > max_z) ? 0x000080 : 0xffffff) : 0x00000 );
+                imagen.setRGB(i, j, (area_limitado && (i < area_ini_x || i > area_fin_x)) ? 0x800000 : (mapaMemoria[i][j]) ?  ((mapa[i][j] > max_z) ? 0x000080 : 0xffffff) : 0x00000 );
             }
         }
         

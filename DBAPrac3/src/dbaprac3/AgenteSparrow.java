@@ -40,32 +40,5 @@ public class AgenteSparrow extends AgenteBusqueda {
         busquedaCompletada = false;
         mapaMemoria_init = false;
         coords_dest = null;
-    }
-           
-    @Override
-    public void finalize(){
-        System.out.println("\nAlemanes encontrados: " + alemanes_debug);
-        super.finalize(); //Pero si se incluye, esto es obligatorio
-        imprimirMapaMemoria();
-        //if(mapaMemoria_init) { imprimirMapaMemoria(); System.out.println("DRON-S: Guardado mapa a disco"); }
-    }
-    
-    public void imprimirMapaMemoria(){
-        BufferedImage imagen = new BufferedImage(max_x, max_y, BufferedImage.TYPE_INT_RGB);
-        for(int i = 0; i < max_x; i++){
-            for(int j = 0; j < max_y; j++){
-                imagen.setRGB(i, j, (i < ini_x || i > fin_x) ? 0x800000 : (mapaMemoria[i][j]) ?  ((mapa[i][j] > max_z) ? 0x000080 : 0xffffff) : 0x00000 );
-            }
-        }
-        
-        FileOutputStream fos;
-        try{
-            fos = new FileOutputStream( (this.getName() + "_memoria.png") );
-            ImageIO.write(imagen, "png", fos);
-            fos.close();
-            System.out.println("Traza guardada");
-        }
-        catch(Exception e) { e.printStackTrace(); }
-    }
-    
+    }          
 }

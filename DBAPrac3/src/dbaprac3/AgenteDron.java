@@ -423,12 +423,11 @@ public abstract class AgenteDron extends AgenteSimple{
         while(escuchado.get("parar") != null){
             //recibirObjetivoEncontrado(escuchado);
             ultimo_mensaje_recibido = ultimo_mensaje_real; //Ignora mensajes del burocrata para la conversación con el servidor. Descutrear luego.
-            estado = Estado.REPOSO;
-            System.out.println("DRON parar");  
+            System.out.println("DRON: Parar");  
             escuchado = super.escuchar();
         }
         
-        System.out.println("DRON-R: No existe el campo objetivo-encontrado. Siguiendo.");
+        System.out.println("DRON: No existe el campo objetivo-encontrado. Siguiendo.");
         return escuchado;
     }
     
@@ -644,11 +643,7 @@ public abstract class AgenteDron extends AgenteSimple{
     }
 
     /**
-    *
-    * @author Mónica
-    */
-    /**
-    *   MODIFICADO CAMBIAR EN DIAGRAMA ANA
+    * 
     * @author Mónica
     */
     protected void avisarObjetivoIdentificado(int x, int y){
@@ -806,13 +801,13 @@ public abstract class AgenteDron extends AgenteSimple{
     protected void bucleExecute(){
             //responderDatos();
             perception();
-            JsonObject msg = escuchar();
+            JsonObject msg = escuchar_until_servidor();
             reply_key = ultimo_mensaje_recibido.getReplyWith();
 
             JSONDecode_variables(msg);
             Accion accion = comprobarAccion();
             move(accion);
-            escuchar();
+            escuchar_until_servidor();
             reply_key = ultimo_mensaje_recibido.getReplyWith();
     }
 
