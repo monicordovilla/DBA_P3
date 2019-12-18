@@ -110,30 +110,28 @@ public class AgenteBurocrata extends AgenteSimple {
     * Método para seleccionar la estrategia desde el terminal
     */
     private Estrategia seleccionarEstrategia(){
-        System.out.println("Escoge la estrategia: ");
-        System.out.println("1) 1 de cada");
-        System.out.println("2) 2 sparrow");
-        System.out.println("3) 3 fly");
-        Scanner s = new Scanner(System.in);
-        String estrategia = s.nextLine();
-        
-        Estrategia resultado;
-        int num = Integer.parseInt(estrategia);
-        switch(num){
-            case 1:
-                resultado = Estrategia.BURO_1_CADA;
-                break;
-            case 2:
-                resultado = Estrategia.BURO_2_SPARROW;
-                break;
-            case 3:
-                resultado = Estrategia.BURO_3_FLY;
-                break;
-            default:
-                resultado = Estrategia.BURO_1_CADA;
-                break;
+        Estrategia resultado = null;
+            while(resultado == null){
+            System.out.println("Escoge la estrategia: ");
+            System.out.println("1) 1 de cada");
+            System.out.println("2) 2 sparrow");
+            System.out.println("3) 3 fly");
+            Scanner s = new Scanner(System.in);
+            String estrategia = s.nextLine();
+
+            int num = Integer.parseInt(estrategia);
+            switch(num){
+                case 1:
+                    resultado = Estrategia.BURO_1_CADA;
+                    break;
+                case 2:
+                    resultado = Estrategia.BURO_2_SPARROW;
+                    break;
+                case 3:
+                    resultado = Estrategia.BURO_3_FLY;
+                    break;
+            }
         }
-        
         return resultado;
     }
     
